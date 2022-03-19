@@ -2,6 +2,12 @@ from __future__ import annotations
 import numpy as np
 from numpy.linalg import inv, det, slogdet
 
+import pandas as pd
+
+import plotly.express as px
+from plotly.subplots import make_subplots
+import plotly.graph_objects as go
+
 
 class UnivariateGaussian:
     """
@@ -51,8 +57,13 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        self.mu_ = sum(X) / X.size
+        self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
 
+
+        # var2 = (1/(X.size-1)) * sum(X2)
+        # print("var1 = %f, var2 = %f", self.var_, var2)
         self.fitted_ = True
         return self
 
@@ -76,7 +87,25 @@ class UnivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+
+        new_X = np.array(X)
+        for i in range(X.size):
+            new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.var_)) # calculate the PDF one point and put in index i
+            print("val: "+ str(X[i]) + " pdf:" + str(new_X[i]))
+        return new_X
+
+    @staticmethod
+    def __pdf_of_val(val, mu, var):
+        """
+        Private method of calculating the pdf at one point
+        """
+        parameter = 1 / (var * np.sqrt(np.pi + np.pi))
+        power = -0.5 * np.square((val - mu) / var)
+        final_val = parameter * np.power(np.e, power) # e^power
+        return final_val
+
+
+
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -143,10 +172,37 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
-        raise NotImplementedError()
+
+        #todo: refactor?
+        d = X[0].size  # col_num
+        m = int(X.size / d) # num_of_data
+        mu = np.zeros((m, 1))
+
+        for i in range(m):
+            for j in range(d):
+                mu[i] += X[i][j]
+            mu[i] /= d
+        self.mu_ = mu
+
+        cov_matrix = np.zeros(shape=(m, m))
+        for i1 in range(m):
+            for i2 in range(m):
+                cov_matrix[i1][i2] = self.__covariance(X[i1], X[i2], self.mu_[i1], self.mu_[i2], d)
+        self.cov_ = cov_matrix
+
+        print(cov_matrix)
 
         self.fitted_ = True
         return self
+
+    @staticmethod
+    def __covariance(x1, x2, mu1, mu2, d):
+        covariant = 0
+        for i in range(d):
+            covariant += (x1[i] - mu1) * (x2[i] - mu2)
+        covariant /= d
+        return covariant
+
 
     def pdf(self, X: np.ndarray):
         """
@@ -190,3 +246,59 @@ class MultivariateGaussian:
             log-likelihood calculated
         """
         raise NotImplementedError()
+
+
+if __name__ == '__main__':
+    # MEAN = 10
+    # VARIANCE = 1
+    # SAMPLE_SIZE = 1000
+    #
+    # uni = UnivariateGaussian()
+    # thousand_samples_uni = np.random.normal(MEAN,  VARIANCE, 1000) # Mean = 10, Var = 1, Size = 1000 samples
+    #
+    # #fit a thousand gaussian samples
+    # uni.fit(thousand_samples_uni)
+    #
+    # print("(%f, %f)" % (uni.mu_, uni.var_)) # Q1
+    #
+    #
+    # sorted_samples = np.sort(thousand_samples_uni)
+    # pdfs = uni.pdf(sorted_samples)
+    # data2 = pd.DataFrame(data={'Sorted Samples': sorted_samples, "PDF": pdfs})
+    # px.scatter(data2, title="PDF of the sorted samples",
+    #        x="Sorted Samples", y="PDF", height=500).show()  # Q2
+    #
+    #
+    # means = np.empty([99]) # todo: do we need this?
+    # abs_distance = np.empty([99])
+    # for i in range(1, 100):
+    #     uni.fit(thousand_samples_uni[:10*i:]) # fit first 10*i samples
+    #     means[i - 1] = uni.mu_
+    #     abs_distance[i - 1] = abs(uni.mu_ - MEAN)
+    # #abs_distance = np.array([abs(i - MEAN) for i in means])
+    #
+    # #todo: change the name to something more fitting
+    # data1 = pd.DataFrame(data={'Samples': range(10, 1000, 10), "Absolute distance": abs_distance})
+    # px.bar(data1, title="Sample to absolute distance between expected value and calculated expected value",
+    #        x="Samples", y="Absolute distance", height=500).show()
+
+    MEAN_MULTI = np.array([0, 0, 4, 0])
+    VARIANCE_MULTI = np.array([[1, 0.2, 0, 0.5],
+                                 [0.2, 2, 0, 0],
+                                 [0,   0, 1, 0],
+                                 [0.5, 0, 0, 1]])
+    SAMPLE_SIZE = 10
+
+    multi = MultivariateGaussian()
+    thousand_samples_multi = np.random.multivariate_normal(MEAN_MULTI, VARIANCE_MULTI, SAMPLE_SIZE)
+    # multi.fit(np.array([[2,4,6,8,10],
+    #                     [7,3,5,1,9]]))
+
+    #Q1
+    multi.fit(thousand_samples_multi)
+    print(multi.mu_)
+    print(multi.cov_)
+
+
+
+
