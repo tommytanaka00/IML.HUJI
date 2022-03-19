@@ -297,6 +297,7 @@ if __name__ == '__main__':
     #Q1
     multi.fit(thousand_samples_multi)
     print(multi.mu_)
+    #sa
     print(multi.cov_)
 
 
