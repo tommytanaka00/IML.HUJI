@@ -58,8 +58,11 @@ class UnivariateGaussian:
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
         #raise NotImplementedError()
-        self.mu_ = sum(X) / X.size
-        self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
+
+        self.mu_ = np.mean(X)
+        self.mu_ = np.var(X)
+        # self.mu_ = sum(X) / X.size
+        # self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
 
 
         # var2 = (1/(X.size-1)) * sum(X2)
@@ -101,11 +104,8 @@ class UnivariateGaussian:
         """
         parameter = 1 / (var * np.sqrt(np.pi + np.pi))
         power = -0.5 * np.square((val - mu) / var)
-        final_val = parameter * np.power(np.e, power) # e^power
+        final_val = parameter * np.exp(power) # e^power
         return final_val
-
-
-
 
     @staticmethod
     def log_likelihood(mu: float, sigma: float, X: np.ndarray) -> float:
@@ -126,7 +126,10 @@ class UnivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        m = X.size
+        sum_xi_minus_mu = sum(X - np.zeros(shape=(m,)).fill(mu)) # Sum(i=1 to m) of (x_i - mu)^2
+        parameter = m * (np.log(np.pi + np.pi) + 2*np.log(sigma))
+        return -0.5 * (parameter + (sum_xi_minus_mu / np.square(sigma)))
 
 
 class MultivariateGaussian:
@@ -172,36 +175,43 @@ class MultivariateGaussian:
         Sets `self.mu_`, `self.cov_` attributes according to calculated estimation.
         Then sets `self.fitted_` attribute to `True`
         """
+        if X.size == 0 or len(X.shape) != 2:
+            raise ValueError("")
+
+        self.mu_ = np.mean(X, axis=0)
+
+        print(self.mu_)
 
         #todo: refactor?
         d = X[0].size  # col_num
         m = int(X.size / d) # num_of_data
-        mu = np.zeros((m, 1))
 
-        for i in range(m):
-            for j in range(d):
-                mu[i] += X[i][j]
-            mu[i] /= d
-        self.mu_ = mu
+        # #done by hand:
+        # mu = np.zeros((m, 1))
+        # for i in range(m):
+        #     for j in range(d):
+        #         mu[i] += X[i][j]
+        #     mu[i] /= d
+        # self.mu_ = mu
 
-        cov_matrix = np.zeros(shape=(m, m))
-        for i1 in range(m):
-            for i2 in range(m):
-                cov_matrix[i1][i2] = self.__covariance(X[i1], X[i2], self.mu_[i1], self.mu_[i2], d)
+        cov_matrix = np.zeros(shape=(d, d))
+        for i1 in range(d):
+            for i2 in range(d):
+                for k in range(m):
+                    cov_matrix[i1][i2] += (X[k][i1] - self.mu_[i1]) * (X[k][i2] - self.mu_[i2])
+                cov_matrix[i1][i2] /= m
         self.cov_ = cov_matrix
-
-        print(cov_matrix)
 
         self.fitted_ = True
         return self
 
-    @staticmethod
-    def __covariance(x1, x2, mu1, mu2, d):
-        covariant = 0
-        for i in range(d):
-            covariant += (x1[i] - mu1) * (x2[i] - mu2)
-        covariant /= d
-        return covariant
+    # @staticmethod
+    # def __covariance(x1, x2, mu1, mu2, m):
+    #     covariant = 0
+    #     for i in range(m):
+    #         covariant += (x1[i] - mu1) * (x2[i] - mu2)
+    #     covariant /= m
+    #     return covariant
 
 
     def pdf(self, X: np.ndarray):
@@ -224,7 +234,31 @@ class MultivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        raise NotImplementedError()
+        m = int(X.size / X[0].size)  # num_of_data
+        new_X = np.array(X)
+        for i in range(m):
+            new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.cov_, m))  # calculate the PDF one point and put in index i
+            # print("val: " + str(X[i]) + " pdf:" + str(new_X[i]))
+        return new_X
+
+    @staticmethod
+    def __pdf_of_val(val, mu, cov_matrix, num_of_data):
+        """
+        Private method of calculating the pdf at one point
+        """
+        if val.shape != mu.shape:
+            print(val.shape, mu.shape)
+            raise ValueError
+        if cov_matrix.shape[0] != cov_matrix.shape[1]:
+            raise ValueError
+        if cov_matrix.shape[0] != val.shape[0]:
+            raise ValueError
+        parameter = 1/(np.sqrt(np.power(np.pi + np.pi, num_of_data) * np.linalg.det(cov_matrix)) )
+        matrix_mutiplication = np.transpose(val - mu) @ np.linalg.inv(cov_matrix) @ (val - mu)
+        power = -0.5 * matrix_mutiplication
+        final_val = parameter * np.exp(power)  # e^power
+        return final_val
+
 
     @staticmethod
     def log_likelihood(mu: np.ndarray, cov: np.ndarray, X: np.ndarray) -> float:
@@ -245,7 +279,17 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        raise NotImplementedError()
+        d = X[0].size  # col_num
+        m = int(X.size / X[0].size)  # num_of_data
+
+        sum_of_vectors = 0
+        for i in range(m):
+            xi_minus_mu = (X[i] - mu)  # m x 1 vector
+            inside_sum = xi_minus_mu.T @ np.linalg.inv(cov) @ xi_minus_mu
+            sum_of_vectors += inside_sum
+
+        parameter = m * (d * np.log(np.pi + np.pi) + np.log(np.linalg.det(cov)))
+        return -0.5 * parameter * sum_of_vectors
 
 
 if __name__ == '__main__':
@@ -283,22 +327,67 @@ if __name__ == '__main__':
     #        x="Samples", y="Absolute distance", height=500).show()
 
     MEAN_MULTI = np.array([0, 0, 4, 0])
+    print(MEAN_MULTI.shape)
     VARIANCE_MULTI = np.array([[1, 0.2, 0, 0.5],
                                  [0.2, 2, 0, 0],
                                  [0,   0, 1, 0],
                                  [0.5, 0, 0, 1]])
-    SAMPLE_SIZE = 10
+    print(VARIANCE_MULTI.shape)
+    SAMPLE_SIZE = 100
 
     multi = MultivariateGaussian()
     thousand_samples_multi = np.random.multivariate_normal(MEAN_MULTI, VARIANCE_MULTI, SAMPLE_SIZE)
-    # multi.fit(np.array([[2,4,6,8,10],
-    #                     [7,3,5,1,9]]))
+    test_array = np.array([[2,4,6,8,10]])
+    print("SHAPE_SAMPLE=", thousand_samples_multi.shape)
+    print("SHAPE_TEST=", test_array.shape)
+    multi.fit(test_array)
+
+    print("mu = ", multi.mu_)
+    print()
+    print("cov = ", multi.cov_)
 
     #Q1
     multi.fit(thousand_samples_multi)
-    print(multi.mu_)
-    #sa
-    print(multi.cov_)
+    print("mu = ", multi.mu_)
+    print()
+    print("cov = ", multi.cov_)
+    print()
+
+    # sorted_samples_multi = np.sort(thousand_samples_multi)
+    # pdfs = multi.pdf(thousand_samples_multi)
+    # print(pdfs)
+
+    print()
+    #print(np.linspace(-10, 10, 200))
+
+    AMOUNT = 20
+
+    rows = np.linspace(-10, 10, AMOUNT)
+    cols = np.linspace(-10, 10, AMOUNT)
+
+
+
+    log_likelihood_array = np.zeros(shape=(AMOUNT, AMOUNT))
+
+    mu1 = np.array([rows[0], 0, cols[0], 0])
+    max_idx = [0,0]
+    max_log_likelihood = multi.log_likelihood(mu1, multi.cov_, thousand_samples_multi)
+    for f1_i in range(AMOUNT):
+        for f2_j in range(AMOUNT):
+            mu1 = np.array([rows[f1_i], 0, cols[f2_j], 0])
+            log_likelihood = multi.log_likelihood(mu1, multi.cov_, thousand_samples_multi)
+            if log_likelihood > max_log_likelihood:
+                max_idx[0] = f1_i
+                max_idx[1] = f2_j
+                max_log_likelihood = log_likelihood
+            # print(mu1)
+            log_likelihood_array[f1_i][f2_j] =  log_likelihood
+
+    go.Figure(go.Heatmap(x=rows, y=cols, z=log_likelihood_array),
+              layout=go.Layout(title="Loglikelihood", height=600, width=600)).show()
+
+    print(max_log_likelihood)
+
 
 
 
