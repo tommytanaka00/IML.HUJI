@@ -342,6 +342,7 @@ if __name__ == '__main__':
     print("SHAPE_TEST=", test_array.shape)
     multi.fit(test_array)
 
+
     print("mu = ", multi.mu_)
     print()
     print("cov = ", multi.cov_)
