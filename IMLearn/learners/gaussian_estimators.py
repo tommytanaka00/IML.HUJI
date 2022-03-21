@@ -60,9 +60,9 @@ class UnivariateGaussian:
         #raise NotImplementedError()
 
         self.mu_ = np.mean(X)
-        self.mu_ = np.var(X)
+        #self.mu_ = np.var(X)
         # self.mu_ = sum(X) / X.size
-        # self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
+        self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
 
 
         # var2 = (1/(X.size-1)) * sum(X2)
@@ -94,7 +94,7 @@ class UnivariateGaussian:
         new_X = np.array(X)
         for i in range(X.size):
             new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.var_)) # calculate the PDF one point and put in index i
-            print("val: "+ str(X[i]) + " pdf:" + str(new_X[i]))
+            # print("val: "+ str(X[i]) + " pdf:" + str(new_X[i]))
         return new_X
 
     @staticmethod
@@ -292,102 +292,90 @@ class MultivariateGaussian:
         return -0.5 * parameter * sum_of_vectors
 
 
-if __name__ == '__main__':
-    # MEAN = 10
-    # VARIANCE = 1
-    # SAMPLE_SIZE = 1000
-    #
-    # uni = UnivariateGaussian()
-    # thousand_samples_uni = np.random.normal(MEAN,  VARIANCE, 1000) # Mean = 10, Var = 1, Size = 1000 samples
-    #
-    # #fit a thousand gaussian samples
-    # uni.fit(thousand_samples_uni)
-    #
-    # print("(%f, %f)" % (uni.mu_, uni.var_)) # Q1
-    #
-    #
-    # sorted_samples = np.sort(thousand_samples_uni)
-    # pdfs = uni.pdf(sorted_samples)
-    # data2 = pd.DataFrame(data={'Sorted Samples': sorted_samples, "PDF": pdfs})
-    # px.scatter(data2, title="PDF of the sorted samples",
-    #        x="Sorted Samples", y="PDF", height=500).show()  # Q2
-    #
-    #
-    # means = np.empty([99]) # todo: do we need this?
-    # abs_distance = np.empty([99])
-    # for i in range(1, 100):
-    #     uni.fit(thousand_samples_uni[:10*i:]) # fit first 10*i samples
-    #     means[i - 1] = uni.mu_
-    #     abs_distance[i - 1] = abs(uni.mu_ - MEAN)
-    # #abs_distance = np.array([abs(i - MEAN) for i in means])
-    #
-    # #todo: change the name to something more fitting
-    # data1 = pd.DataFrame(data={'Samples': range(10, 1000, 10), "Absolute distance": abs_distance})
-    # px.bar(data1, title="Sample to absolute distance between expected value and calculated expected value",
-    #        x="Samples", y="Absolute distance", height=500).show()
+def univariate_gaussian_estimation(mean, variance, sample_size):
+    """
+    Part 3.1 Questions 1-3
+    """
+    # Q1
+    uni = UnivariateGaussian()
+    samples = np.random.normal(mean, variance, sample_size)
+    uni.fit(samples)
+    print("(%f, %f)" % (uni.mu_, uni.var_))
 
-    MEAN_MULTI = np.array([0, 0, 4, 0])
-    print(MEAN_MULTI.shape)
-    VARIANCE_MULTI = np.array([[1, 0.2, 0, 0.5],
-                                 [0.2, 2, 0, 0],
-                                 [0,   0, 1, 0],
-                                 [0.5, 0, 0, 1]])
-    print(VARIANCE_MULTI.shape)
-    SAMPLE_SIZE = 100
+    # Q3
+    sorted_samples = np.sort(samples)
+    pdfs = uni.pdf(sorted_samples)
+    data2 = pd.DataFrame(data={'Sorted Samples': sorted_samples, "PDF": pdfs})
+    px.scatter(data2, title="PDF of the sorted samples",
+               x="Sorted Samples", y="PDF", height=500).show()
 
+    # Q2
+    abs_distance = np.empty([99])
+    for i in range(1, 100):
+        uni.fit(samples[:10 * i:])  # fit first 10*i samples
+        abs_distance[i - 1] = abs(uni.mu_ - mean)
+
+    # todo: change the name to something more fitting
+    data1 = pd.DataFrame(data={'Samples': range(10, 1000, 10), "Absolute distance": abs_distance})
+    px.bar(data1, title="Sample to absolute distance between expected value and calculated expected value",
+           x="Samples", y="Absolute distance", height=500).show()
+
+
+
+def mutlivariate_gaussian_estimation(mean_vec, cov_matrix, sample_size):
+    """
+    Part 3.2 Questions 4-6
+    """
+    # Q4
     multi = MultivariateGaussian()
-    thousand_samples_multi = np.random.multivariate_normal(MEAN_MULTI, VARIANCE_MULTI, SAMPLE_SIZE)
-    test_array = np.array([[2,4,6,8,10]])
-    print("SHAPE_SAMPLE=", thousand_samples_multi.shape)
-    print("SHAPE_TEST=", test_array.shape)
-    multi.fit(test_array)
-
-
+    samples = np.random.multivariate_normal(mean_vec, cov_matrix, sample_size)
+    multi.fit(samples)
     print("mu = ", multi.mu_)
-    print()
     print("cov = ", multi.cov_)
 
-    #Q1
-    multi.fit(thousand_samples_multi)
-    print("mu = ", multi.mu_)
-    print()
-    print("cov = ", multi.cov_)
     print()
 
-    # sorted_samples_multi = np.sort(thousand_samples_multi)
-    # pdfs = multi.pdf(thousand_samples_multi)
-    # print(pdfs)
-
-    print()
-    #print(np.linspace(-10, 10, 200))
-
+    # Q5
     AMOUNT = 20
 
     rows = np.linspace(-10, 10, AMOUNT)
     cols = np.linspace(-10, 10, AMOUNT)
 
-
-
     log_likelihood_array = np.zeros(shape=(AMOUNT, AMOUNT))
 
     mu1 = np.array([rows[0], 0, cols[0], 0])
     max_idx = [0,0]
-    max_log_likelihood = multi.log_likelihood(mu1, multi.cov_, thousand_samples_multi)
+    max_log_likelihood = multi.log_likelihood(mu1, multi.cov_, samples)
     for f1_i in range(AMOUNT):
         for f2_j in range(AMOUNT):
             mu1 = np.array([rows[f1_i], 0, cols[f2_j], 0])
-            log_likelihood = multi.log_likelihood(mu1, multi.cov_, thousand_samples_multi)
+            # print(mu1)
+            log_likelihood = multi.log_likelihood(mu1, multi.cov_, samples)
             if log_likelihood > max_log_likelihood:
                 max_idx[0] = f1_i
                 max_idx[1] = f2_j
                 max_log_likelihood = log_likelihood
-            # print(mu1)
             log_likelihood_array[f1_i][f2_j] =  log_likelihood
 
     go.Figure(go.Heatmap(x=rows, y=cols, z=log_likelihood_array),
               layout=go.Layout(title="Loglikelihood", height=600, width=600)).show()
 
+    #Q6
     print(max_log_likelihood)
+
+
+
+if __name__ == '__main__':
+    univariate_gaussian_estimation(10, 1, 1000) # Mean = 10, Var = 1, Size = 1000 samples
+
+    print()
+
+    mean_vector = np.array([0, 0, 4, 0])
+    covariant_matrix = np.array([[1, 0.2, 0, 0.5],
+                           [0.2, 2, 0, 0],
+                           [0, 0, 1, 0],
+                           [0.5, 0, 0, 1]])
+    mutlivariate_gaussian_estimation(mean_vector, covariant_matrix, 1000)
 
 
 
