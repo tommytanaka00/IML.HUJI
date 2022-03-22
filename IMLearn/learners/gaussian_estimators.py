@@ -94,7 +94,6 @@ class UnivariateGaussian:
         new_X = np.array(X)
         for i in range(X.size):
             new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.var_)) # calculate the PDF one point and put in index i
-            # print("val: "+ str(X[i]) + " pdf:" + str(new_X[i]))
         return new_X
 
     @staticmethod
@@ -238,7 +237,6 @@ class MultivariateGaussian:
         new_X = np.array(X)
         for i in range(m):
             new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.cov_, m))  # calculate the PDF one point and put in index i
-            # print("val: " + str(X[i]) + " pdf:" + str(new_X[i]))
         return new_X
 
     @staticmethod
@@ -254,8 +252,8 @@ class MultivariateGaussian:
         if cov_matrix.shape[0] != val.shape[0]:
             raise ValueError
         parameter = 1/(np.sqrt(np.power(np.pi + np.pi, num_of_data) * np.linalg.det(cov_matrix)) )
-        matrix_mutiplication = np.transpose(val - mu) @ np.linalg.inv(cov_matrix) @ (val - mu)
-        power = -0.5 * matrix_mutiplication
+        matrix_multiplication = np.transpose(val - mu) @ np.linalg.inv(cov_matrix) @ (val - mu)
+        power = -0.5 * matrix_multiplication
         final_val = parameter * np.exp(power)  # e^power
         return final_val
 
@@ -281,15 +279,19 @@ class MultivariateGaussian:
         """
         d = X[0].size  # col_num
         m = int(X.size / X[0].size)  # num_of_data
-
-        sum_of_vectors = 0
+        X_minus_mu = np.copy(X)  # Each column is X[i] - mu
         for i in range(m):
-            xi_minus_mu = (X[i] - mu)  # m x 1 vector
-            inside_sum = xi_minus_mu.T @ np.linalg.inv(cov) @ xi_minus_mu
-            sum_of_vectors += inside_sum
+            X_minus_mu[i] -= mu
+
+        sum_of_vectors = np.sum(X_minus_mu @ np.linalg.inv(cov) * X_minus_mu)  # Vectorizing what is written below
+        # what the above equation does is basically this:
+        # for i in range(m):
+        #     xi_minus_mu = (X[i] - mu)  # m x 1 vector
+        #     inside_sum = xi_minus_mu.T @ np.linalg.inv(cov) @ xi_minus_mu
+        #     sum_of_vectors += inside_sum
 
         parameter = m * (d * np.log(np.pi + np.pi) + np.log(np.linalg.det(cov)))
-        return -0.5 * parameter * sum_of_vectors
+        return -0.5 * (parameter + sum_of_vectors)
 
 
 def univariate_gaussian_estimation(mean, variance, sample_size):
@@ -336,7 +338,7 @@ def mutlivariate_gaussian_estimation(mean_vec, cov_matrix, sample_size):
     print()
 
     # Q5
-    AMOUNT = 20
+    AMOUNT = 2000
 
     rows = np.linspace(-10, 10, AMOUNT)
     cols = np.linspace(-10, 10, AMOUNT)
