@@ -2,10 +2,7 @@ from __future__ import annotations
 import numpy as np
 from numpy.linalg import inv, det, slogdet
 
-import pandas as pd
 
-import plotly.express as px
-from plotly.subplots import make_subplots
 import plotly.graph_objects as go
 
 
@@ -57,16 +54,10 @@ class UnivariateGaussian:
         Sets `self.mu_`, `self.var_` attributes according to calculated estimation (where
         estimator is either biased or unbiased). Then sets `self.fitted_` attribute to `True`
         """
-        #raise NotImplementedError()
-
         self.mu_ = np.mean(X)
-        #self.mu_ = np.var(X)
         # self.mu_ = sum(X) / X.size
         self.var_ = (sum(np.multiply(X, X)) / X.size) - (np.square(self.mu_))
 
-
-        # var2 = (1/(X.size-1)) * sum(X2)
-        # print("var1 = %f, var2 = %f", self.var_, var2)
         self.fitted_ = True
         return self
 
@@ -175,16 +166,12 @@ class MultivariateGaussian:
         Then sets `self.fitted_` attribute to `True`
         """
         if X.size == 0 or len(X.shape) != 2:
-            raise ValueError("")
+            raise ValueError()
+
+        m = X.shape[0] # num_of_data
+        d = X.shape[1] # col_num
 
         self.mu_ = np.mean(X, axis=0)
-
-        print(self.mu_)
-
-        #todo: refactor?
-        d = X[0].size  # col_num
-        m = int(X.size / d) # num_of_data
-
         # #done by hand:
         # mu = np.zeros((m, 1))
         # for i in range(m):
@@ -203,14 +190,6 @@ class MultivariateGaussian:
 
         self.fitted_ = True
         return self
-
-    # @staticmethod
-    # def __covariance(x1, x2, mu1, mu2, m):
-    #     covariant = 0
-    #     for i in range(m):
-    #         covariant += (x1[i] - mu1) * (x2[i] - mu2)
-    #     covariant /= m
-    #     return covariant
 
 
     def pdf(self, X: np.ndarray):
@@ -233,7 +212,7 @@ class MultivariateGaussian:
         """
         if not self.fitted_:
             raise ValueError("Estimator must first be fitted before calling `pdf` function")
-        m = int(X.size / X[0].size)  # num_of_data
+        m = X.shape[0]  # num_of_data
         new_X = np.array(X)
         for i in range(m):
             new_X.put(i, self.__pdf_of_val(X[i], self.mu_, self.cov_, m))  # calculate the PDF one point and put in index i
@@ -277,8 +256,9 @@ class MultivariateGaussian:
         log_likelihood: float
             log-likelihood calculated
         """
-        d = X[0].size  # col_num
-        m = int(X.size / X[0].size)  # num_of_data
+        m = X.shape[0]  # num_of_data
+        d = X.shape[1]  # col_num
+
         X_minus_mu = np.copy(X)  # Each column is X[i] - mu
         for i in range(m):
             X_minus_mu[i] -= mu
@@ -292,94 +272,3 @@ class MultivariateGaussian:
 
         parameter = m * (d * np.log(np.pi + np.pi) + np.log(np.linalg.det(cov)))
         return -0.5 * (parameter + sum_of_vectors)
-
-
-def univariate_gaussian_estimation(mean, variance, sample_size):
-    """
-    Part 3.1 Questions 1-3
-    """
-    # Q1
-    uni = UnivariateGaussian()
-    samples = np.random.normal(mean, variance, sample_size)
-    uni.fit(samples)
-    print("(%f, %f)" % (uni.mu_, uni.var_))
-
-    # Q3
-    sorted_samples = np.sort(samples)
-    pdfs = uni.pdf(sorted_samples)
-    data2 = pd.DataFrame(data={'Sorted Samples': sorted_samples, "PDF": pdfs})
-    px.scatter(data2, title="PDF of the sorted samples",
-               x="Sorted Samples", y="PDF", height=500).show()
-
-    # Q2
-    abs_distance = np.empty([99])
-    for i in range(1, 100):
-        uni.fit(samples[:10 * i:])  # fit first 10*i samples
-        abs_distance[i - 1] = abs(uni.mu_ - mean)
-
-    # todo: change the name to something more fitting
-    data1 = pd.DataFrame(data={'Samples': range(10, 1000, 10), "Absolute distance": abs_distance})
-    px.bar(data1, title="Sample to absolute distance between expected value and calculated expected value",
-           x="Samples", y="Absolute distance", height=500).show()
-
-
-
-def mutlivariate_gaussian_estimation(mean_vec, cov_matrix, sample_size):
-    """
-    Part 3.2 Questions 4-6
-    """
-    # Q4
-    multi = MultivariateGaussian()
-    samples = np.random.multivariate_normal(mean_vec, cov_matrix, sample_size)
-    multi.fit(samples)
-    print("mu = ", multi.mu_)
-    print("cov = ", multi.cov_)
-
-    print()
-
-    # Q5
-    AMOUNT = 2000
-
-    rows = np.linspace(-10, 10, AMOUNT)
-    cols = np.linspace(-10, 10, AMOUNT)
-
-    log_likelihood_array = np.zeros(shape=(AMOUNT, AMOUNT))
-
-    mu1 = np.array([rows[0], 0, cols[0], 0])
-    max_idx = [0,0]
-    max_log_likelihood = multi.log_likelihood(mu1, multi.cov_, samples)
-    for f1_i in range(AMOUNT):
-        for f2_j in range(AMOUNT):
-            mu1 = np.array([rows[f1_i], 0, cols[f2_j], 0])
-            # print(mu1)
-            log_likelihood = multi.log_likelihood(mu1, multi.cov_, samples)
-            if log_likelihood > max_log_likelihood:
-                max_idx[0] = f1_i
-                max_idx[1] = f2_j
-                max_log_likelihood = log_likelihood
-            log_likelihood_array[f1_i][f2_j] =  log_likelihood
-
-    go.Figure(go.Heatmap(x=rows, y=cols, z=log_likelihood_array),
-              layout=go.Layout(title="Loglikelihood", height=600, width=600)).show()
-
-    #Q6
-    print(max_log_likelihood)
-
-
-
-if __name__ == '__main__':
-    univariate_gaussian_estimation(10, 1, 1000) # Mean = 10, Var = 1, Size = 1000 samples
-
-    print()
-
-    mean_vector = np.array([0, 0, 4, 0])
-    covariant_matrix = np.array([[1, 0.2, 0, 0.5],
-                           [0.2, 2, 0, 0],
-                           [0, 0, 1, 0],
-                           [0.5, 0, 0, 1]])
-    mutlivariate_gaussian_estimation(mean_vector, covariant_matrix, 1000)
-
-
-
-
-
