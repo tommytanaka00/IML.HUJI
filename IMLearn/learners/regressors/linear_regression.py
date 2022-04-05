@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import NoReturn
-from ...base import BaseEstimator
+from IMLearn.base import BaseEstimator
 import numpy as np
 from numpy.linalg import pinv
+from IMLearn.metrics.loss_functions import mean_square_error
 
 
 class LinearRegression(BaseEstimator):
@@ -12,7 +13,7 @@ class LinearRegression(BaseEstimator):
     Solving Ordinary Least Squares optimization problem
     """
 
-    def __init__(self, include_intercept: bool = True) -> LinearRegression:
+    def __init__(self, include_intercept: bool = True):# -> LinearRegression:
         """
         Instantiate a linear regression estimator
 
@@ -26,7 +27,7 @@ class LinearRegression(BaseEstimator):
         include_intercept_: bool
             Should fitted model include an intercept or not
 
-        coefs_: ndarray of shape (n_features,) or (n_features+1,)
+        coefs_: ndarray of shape (n_features,) (without intercept) or (n_features+1,) (with intercept)
             Coefficients vector fitted by linear regression. To be set in
             `LinearRegression.fit` function.
         """
@@ -49,7 +50,14 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        raise NotImplementedError()
+        # transpose(linalg.pinv(transpose(X))) @ y?
+        psuedo_inverse_X = np.linalg.pinv(X.T).T
+        assert psuedo_inverse_X.shape[1] == y.shape[0]
+        self.coefs_ = psuedo_inverse_X @ y  # the w right?
+        if self.include_intercept_:
+            intercept = np.mean(y)
+            np.insert(self.coefs_, obj=0, values=intercept)
+
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -65,7 +73,9 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        if X.shape[1] != self.coefs_.shape[0]:
+            raise ValueError("Matrix dimensions incorrect")
+        return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -84,4 +94,11 @@ class LinearRegression(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        raise NotImplementedError()
+        y_hat = self.predict(X)
+        return mean_square_error(y, y_hat)
+
+
+
+# if __name__ == '__main__':
+#     lin_reg = LinearRegression()
+#     lin_reg.loss()

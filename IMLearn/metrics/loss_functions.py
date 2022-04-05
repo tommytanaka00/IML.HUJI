@@ -16,7 +16,12 @@ def mean_square_error(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     -------
     MSE of given predictions
     """
-    raise NotImplementedError()
+    if y_true.size != y_pred.size:
+        print("yhat size and true y size", y_pred.size, y_true.size)
+        raise ValueError("Not same array size")
+    if y_true.size == 0:
+        raise ValueError("Empty array")
+    return (1/y_true.size) * sum(np.power(np.subtract(y_true, y_pred), 2))
 
 
 def misclassification_error(y_true: np.ndarray, y_pred: np.ndarray, normalize: bool = True) -> float:
@@ -73,3 +78,8 @@ def cross_entropy(y_true: np.ndarray, y_pred: np.ndarray) -> float:
     Cross entropy of given predictions
     """
     raise NotImplementedError()
+
+if __name__ == '__main__':
+    #TEST
+    print(mean_square_error(np.array([1,2,3,3]), np.array([1,2,3,3])))
+    print(mean_square_error(np.array([1,2,3,3]), np.array([4,4,4,4])))
