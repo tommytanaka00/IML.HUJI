@@ -1,6 +1,7 @@
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
 
+
 from typing import NoReturn
 import numpy as np
 import pandas as pd
@@ -23,7 +24,65 @@ def load_data(filename: str):
     Design matrix and response vector (prices) - either as a single
     DataFrame or a Tuple[DataFrame, Series]
     """
-    raise NotImplementedError()
+    house_prices_df = pd.read_csv(filename)
+
+    #todo: remove prints
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 150)
+    #print(house_prices_df.head(100).yr_renovated)
+    #print(house_prices_df.head(100).sqft_living15)
+
+    #print(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 10))
+    pd.reset_option('display.max_rows|display.max_columns|display.width')
+    # remove nulls and duplicates
+    house_prices_df = house_prices_df.dropna().drop_duplicates()
+
+    # change the zipcode to int (usually from string) todo: needed??
+    house_prices_df["zipcode"] = house_prices_df["zipcode"].astype(int)
+
+    # get dummy values for zipcode
+    #dummies_for_zipcode = pd.get_dummies(house_prices_df["zipcode"])
+    house_prices_df = pd.get_dummies(house_prices_df, prefix='zipcode_', columns=['zipcode'])
+
+
+    # remove information that does not affect prices
+    for c in ["date", "id", "lat", "long"]:
+        house_prices_df = house_prices_df.drop(c, axis='columns')
+
+    # add in only the values that make sense
+    for c in ["floors", "bathrooms", "price", "sqft_living", "sqft_lot", "sqft_above", "sqft_living15", "sqft_lot15"]:
+        house_prices_df = house_prices_df[house_prices_df[c] > 0]
+    for c in ["sqft_basement"]:
+        house_prices_df = house_prices_df[house_prices_df[c] >= 0]
+
+    # remove houses older than 200 years old
+    house_prices_df = house_prices_df[house_prices_df["yr_built"] > (house_prices_df["yr_built"].max() - 200)]
+
+    # remove ranges that don't make sense
+    house_prices_df = house_prices_df[house_prices_df["waterfront"].isin([0, 1])]
+    house_prices_df = house_prices_df[house_prices_df["view"].isin(range(5))]
+    house_prices_df = house_prices_df[house_prices_df["condition"].isin(range(1, 6))]
+    house_prices_df = house_prices_df[house_prices_df["grade"].isin(range(1, 15))]
+
+    # change the year renovated into whether it was recently renovated or not
+    # recently renovated means that it was renovated in the past 10 years
+    house_prices_df["recently_renovated"] = np.asarray(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 10))
+    house_prices_df = house_prices_df.drop("yr_renovated", axis='columns')
+
+    # house_prices_df["decade_built"] = (house_prices_df["yr_built"] / 10).astype(int)
+    # house_prices_df = house_prices_df.drop("yr_built", 1)
+
+    house_prices_df = pd.get_dummies(house_prices_df, prefix='yr_built', columns=['yr_built']) # todo: do I need dummies for this?
+
+    # Remove outliers
+    house_prices_df = house_prices_df[house_prices_df["bedrooms"] < 16]
+    house_prices_df = house_prices_df[house_prices_df["sqft_lot"] < 1250000]
+    house_prices_df = house_prices_df[house_prices_df["sqft_lot15"] < 500000]
+
+    #incert intercept
+    house_prices_df.insert(0, 'intercept', 1, True)
+    return house_prices_df.drop("price", axis='columns'), house_prices_df.price
 
 
 def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") -> NoReturn:
@@ -43,19 +102,35 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
-    raise NotImplementedError()
+    for col in X:
+        rho = pearlson_correlation(X[col], y)
+
+        fig = px.scatter(pd.DataFrame({'x': X[col], 'y': y}), x="x", y="y", trendline="ols",
+                         title=f"Correlation Between {col} Values and Response Pearson Correlation {rho}",
+                         labels={"x": f"{col} Values", "y": "Response Values"})
+        fig.write_image(output_path + "/pearson.correlation.%s.png" % col)
+
+
+def pearlson_correlation(feature, response) -> float:
+    stds = (np.std(feature) * np.std(response))
+    if stds != 0:
+        return np.cov(feature, response) / (np.std(feature) * np.std(response))
+    return 0
+
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     # Question 1 - Load and preprocessing of housing prices dataset
-    raise NotImplementedError()
+    feature, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    raise NotImplementedError()
+    #feature_evaluation(feature, response)
 
     # Question 3 - Split samples into training- and testing sets.
-    raise NotImplementedError()
+    train_X, train_y, test_X, test_y = split_train_test(feature, response, 0.75)
+
+
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -64,4 +139,33 @@ if __name__ == '__main__':
     #   3) Test fitted model over test set
     #   4) Store average and variance of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
-    raise NotImplementedError()
+
+    lin_reg = LinearRegression(include_intercept=True)
+    NUM_OF_ITERATIONS = 1
+    PERCENT_DENSITY = 10
+    NUM_OF_PERCENT = int(100 / PERCENT_DENSITY)
+    list_of_loss = np.zeros(NUM_OF_PERCENT - 1)
+
+    test_X_nparray = test_X.to_numpy(dtype=float)
+    test_y_nparray = test_y.to_numpy(dtype=float)
+    j = 0
+    for p in range(PERCENT_DENSITY, 100, PERCENT_DENSITY):
+        for i in range(NUM_OF_ITERATIONS):
+            sampled_X = train_X.sample(frac=0.01 * p).to_numpy(dtype=float)
+            sampled_y = train_y.sample(frac=0.01 * p).to_numpy(dtype=float)
+            lin_reg.fit(sampled_X, sampled_y)
+            #print(lin_reg.loss(test_X_nparray, test_y_nparray))
+            list_of_loss[j] = list_of_loss[j] + (lin_reg.loss(test_X_nparray, test_y_nparray))
+        j += 1
+        print(j)
+    list_of_loss /= j
+    list_of_variance =
+    print(list_of_loss)
+
+
+
+
+
+
+
+

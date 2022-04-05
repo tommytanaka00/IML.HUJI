@@ -117,7 +117,9 @@ class UnivariateGaussian:
             log-likelihood calculated
         """
         m = X.size
-        sum_xi_minus_mu = sum(X - np.zeros(shape=(m,)).fill(mu)) # Sum(i=1 to m) of (x_i - mu)^2
+        mus = np.zeros(shape=(m,))
+        mus.fill(mu)
+        sum_xi_minus_mu = sum(X - mus) # Sum(i=1 to m) of (x_i - mu)^2
         parameter = m * (np.log(np.pi + np.pi) + 2*np.log(sigma))
         return -0.5 * (parameter + (sum_xi_minus_mu / np.square(sigma)))
 
@@ -272,3 +274,4 @@ class MultivariateGaussian:
 
         parameter = m * (d * np.log(np.pi + np.pi) + np.log(np.linalg.det(cov)))
         return -0.5 * (parameter + sum_of_vectors)
+
