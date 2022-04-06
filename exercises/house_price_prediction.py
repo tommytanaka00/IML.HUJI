@@ -145,47 +145,60 @@ if __name__ == '__main__':
     #   1) Sample p% of the overall training data
     #   2) Fit linear model (including intercept) over sampled set
     #   3) Test fitted model over test set
-    #   4) Store average and variance of loss over test set
+    #   4) Store average and std of loss over test set
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
 
     lin_reg = LinearRegression(include_intercept=True)
     NUM_OF_ITERATIONS = 10
     PERCENT_DENSITY = 10
     NUM_OF_PERCENT = int(100 / PERCENT_DENSITY)
-    list_of_loss = np.zeros(shape=(NUM_OF_PERCENT, NUM_OF_ITERATIONS))
+    list_of_loss = []
+    list_of_mean = []
+    list_of_std = []
 
     test_X_nparray = test_X.to_numpy(dtype=float)
     test_y_nparray = test_y.to_numpy(dtype=float)
     j = 0
-    x = np.linspace(PERCENT_DENSITY, 101, PERCENT_DENSITY)
+    x = np.linspace(PERCENT_DENSITY, 100, PERCENT_DENSITY)
     for p in range(PERCENT_DENSITY, 101, PERCENT_DENSITY):
+        list_of_loss = []
         for i in range(NUM_OF_ITERATIONS):
-            print(0.01 * p)
+            #print(0.01 * p)
             sampled_X = train_X.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
             sampled_y = train_y.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
             lin_reg.fit(sampled_X, sampled_y)
             #print(lin_reg.loss(test_X_nparray, test_y_nparray))
-            list_of_loss[j][i] = lin_reg.loss(test_X_nparray, test_y_nparray)
+            list_of_loss.append(lin_reg.loss(test_X_nparray, test_y_nparray))
         j += 1
-        print(j)
-    list_of_mean = np.mean(list_of_loss, axis=1)
-    list_of_var = np.var(list_of_loss, axis=1)
-    variance_positive = list_of_mean + 2 * list_of_var
-    variance_negative = list_of_mean - 2 * list_of_var
+        #print(j)
+        list_of_mean.append(np.mean(list_of_loss))
+        list_of_std.append(np.std(list_of_loss))
+    list_of_mean = np.array(list_of_mean)
+    list_of_std = np.array(list_of_std)
+    # list_of_mean = np.mean(list_of_loss, axis=1)
+    # list_of_std = np.var(list_of_loss, axis=1)
+    std_positive = list_of_mean + 2 * list_of_std
+    std_negative = list_of_mean + (-2) * list_of_std
     print(x)
-    print(list_of_loss)
-    print(list_of_mean)
-    print(list_of_var)
-    print(variance_positive)
-    print(variance_negative)
+    print(list_of_loss, end="\n\n")
+    print(list_of_mean, end="\n\n")
+    print(list_of_std, end="\n\n")
+    print(2 * list_of_std, end="\n\n")
+    print((-2) * list_of_std, end="\n\n")
 
-    go.Figure([go.Scatter(x=x, y=list_of_mean - 2 * list_of_var, fill=None, mode="lines", line=dict(color="lightgrey"),
+    go.Figure((go.Scatter(x=x, y=list_of_mean, mode="markers+lines",name="Mean Prediction", line=dict(dash="dash"),
+                          marker=dict(color="green", opacity=0.8)),
+
+               go.Scatter(x=x, y=std_positive, fill=None, mode="lines",
+                          line=dict(color="lightgrey"),
                           showlegend=False),
-               go.Scatter(x=x, y=list_of_mean + 2 * list_of_var, fill='tonexty', mode="lines", line=dict(color="lightgrey"),
+
+               go.Scatter(x=x, y=std_negative, fill='tonexty', mode="lines",
+                          line=dict(color="lightgrey"),
                           showlegend=False),
-               go.Scatter(x=x, y=list_of_mean, mode="markers+lines", marker=dict(color="black", size=1), showlegend=False)],
+               ),
               layout=go.Layout(
-                  title=r"$\text{Mean and Variance of Estimator of Expectation As Function Of Sample Size}$",
+                  title=r"$\text{Mean and std of Estimator of Expectation As Function Of Sample Size}$",
                   height=300)).show()
 
 
