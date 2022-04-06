@@ -45,8 +45,8 @@ def load_data(filename: str):
     for c in ["sqft_basement"]:
         house_prices_df = house_prices_df[house_prices_df[c] >= 0]
 
-    # remove houses older than 200 years old
-    house_prices_df = house_prices_df[house_prices_df["yr_built"] > (house_prices_df["yr_built"].max() - 200)]
+    # remove houses older than 300 years old
+    house_prices_df = house_prices_df[house_prices_df["yr_built"] > (house_prices_df["yr_built"].max() - 300)]
 
     # remove ranges that don't make sense
     house_prices_df = house_prices_df[house_prices_df["waterfront"].isin([0, 1])]
@@ -131,7 +131,7 @@ if __name__ == '__main__':
     feature, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    #feature_evaluation(feature, response)
+    feature_evaluation(feature, response)
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(feature, response, 0.75)
@@ -186,6 +186,7 @@ if __name__ == '__main__':
     print(2 * list_of_std, end="\n\n")
     print((-2) * list_of_std, end="\n\n")
 
+    # todo: name the axis and filename
     go.Figure((go.Scatter(x=x, y=list_of_mean, mode="markers+lines",name="Mean Prediction", line=dict(dash="dash"),
                           marker=dict(color="green", opacity=0.8)),
 

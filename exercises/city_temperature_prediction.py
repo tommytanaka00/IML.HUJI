@@ -35,13 +35,17 @@ def load_data(filename: str) -> pd.DataFrame:
     city_temp_df = pd.read_csv(filename, parse_dates=True)
     city_temp_df.dropna()
     #city_temp_df = pd.get_dummies(city_temp_df, prefix='Country', columns=['Country'])
-    city_temp_df["Date"] = city_temp_df["Date"].apply(day_of_year)
+    city_temp_df["DayOfYear"] = city_temp_df["Date"].apply(day_of_year)
+    city_temp_df = city_temp_df[city_temp_df['Temp'] > -30]
+    city_temp_df = city_temp_df[city_temp_df['Temp'] < 50]
+
+
+
 
     pd.set_option('display.max_rows', 500)
     pd.set_option('display.max_columns', 500)
     pd.set_option('display.width', 150)
     print(city_temp_df)
-    pd.reset_option('display.max_rows|display.max_columns|display.width')
 
     return city_temp_df
 
@@ -53,15 +57,30 @@ if __name__ == '__main__':
 
     # Question 2 - Exploring data for specific country
     israel_temp = city_temp_df.loc[city_temp_df['Country'] == 'Israel']
-    print(israel_temp)
+    # print(israel_temp)
+    # print(israel_temp['DayOfYear'])
+    # print(israel_temp['Temp'])
+    # todo: name the axis and filename
+    fig = px.scatter(x=israel_temp['DayOfYear'], y=israel_temp['Temp'], color=israel_temp['Year'],
+                     labels = {'x': "Day of the year", 'y':"Temperature"},
+                     title="")
+    fig.show()
 
+    print(israel_temp['Month'])
+    grouped_by_month = israel_temp.groupby(['Month'])['Temp'].agg(['std']).reset_index()
+    print(grouped_by_month)
+    #todo: name the axis and filename
+    px.bar(grouped_by_month, x="Month", y="std").show()
 
 
     # Question 3 - Exploring differences between countries
-    raise NotImplementedError()
+
+    grouped_by_country_month = city_temp_df.groupby(['Country', 'Month'], as_index=False)['Temp'].agg(['mean','std']).reset_index()
+    print(grouped_by_country_month)
+    line_plot = px.line(grouped_by_country_month, x='Month', y='mean', error_y='std', color='Country')
+    line_plot.show()
+
 
     # Question 4 - Fitting model for different values of `k`
-    raise NotImplementedError()
 
     # Question 5 - Evaluating fitted model on different countries
-    raise NotImplementedError()
