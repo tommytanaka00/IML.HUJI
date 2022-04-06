@@ -26,24 +26,13 @@ def load_data(filename: str):
     """
     house_prices_df = pd.read_csv(filename)
 
-    #todo: remove prints
-    pd.set_option('display.max_rows', 500)
-    pd.set_option('display.max_columns', 500)
-    pd.set_option('display.width', 150)
-    #print(house_prices_df.head(100).yr_renovated)
-    #print(house_prices_df.head(100).sqft_living15)
-
-    #print(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 10))
-    pd.reset_option('display.max_rows|display.max_columns|display.width')
     # remove nulls and duplicates
     house_prices_df = house_prices_df.dropna().drop_duplicates()
 
     # change the zipcode to int (usually from string) todo: needed??
     house_prices_df["zipcode"] = house_prices_df["zipcode"].astype(int)
 
-    # get dummy values for zipcode
-    #dummies_for_zipcode = pd.get_dummies(house_prices_df["zipcode"])
-    house_prices_df = pd.get_dummies(house_prices_df, prefix='zipcode_', columns=['zipcode'])
+
 
 
     # remove information that does not affect prices
@@ -67,13 +56,17 @@ def load_data(filename: str):
 
     # change the year renovated into whether it was recently renovated or not
     # recently renovated means that it was renovated in the past 10 years
-    house_prices_df["recently_renovated"] = np.asarray(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 10))
+    house_prices_df["recently_renovated"] = np.asarray(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 30)).astype(int)
     house_prices_df = house_prices_df.drop("yr_renovated", axis='columns')
 
-    # house_prices_df["decade_built"] = (house_prices_df["yr_built"] / 10).astype(int)
-    # house_prices_df = house_prices_df.drop("yr_built", 1)
 
-    house_prices_df = pd.get_dummies(house_prices_df, prefix='yr_built', columns=['yr_built']) # todo: do I need dummies for this?
+    house_prices_df["decade_built"] = ((round(house_prices_df["yr_built"] / 10)) * 10).astype(int)
+    house_prices_df = house_prices_df.drop("yr_built", axis='columns')
+
+    # get dummy values for zipcode
+    # dummies_for_zipcode = pd.get_dummies(house_prices_df["zipcode"])
+    house_prices_df = pd.get_dummies(house_prices_df, prefix='zipcode_', columns=['zipcode'])
+
 
     # Remove outliers
     house_prices_df = house_prices_df[house_prices_df["bedrooms"] < 16]
@@ -82,6 +75,16 @@ def load_data(filename: str):
 
     #incert intercept
     house_prices_df.insert(0, 'intercept', 1, True)
+
+    #todo: remove prints
+    pd.set_option('display.max_rows', 500)
+    pd.set_option('display.max_columns', 500)
+    pd.set_option('display.width', 150)
+    #print(house_prices_df)
+
+    #print(house_prices_df["yr_renovated"] >= (house_prices_df["yr_renovated"].max() - 10))
+    pd.reset_option('display.max_rows|display.max_columns|display.width')
+
     return house_prices_df.drop("price", axis='columns'), house_prices_df.price
 
 
@@ -102,12 +105,15 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
+    j=0
     for col in X:
+        print(j)
+        j+=1
         rho = pearlson_correlation(X[col], y)
 
         fig = px.scatter(pd.DataFrame({'x': X[col], 'y': y}), x="x", y="y", trendline="ols",
-                         title=f"Correlation Between {col} Values and Response Pearson Correlation {rho}",
-                         labels={"x": f"{col} Values", "y": "Response Values"})
+                         title=f"Correlation Between {col} Values and Price Pearson Correlation {rho}",
+                         labels={"x": f"{col} Values", "y": "Price"})
         fig.write_image(output_path + "/pearson.correlation.%s.png" % col)
 
 
@@ -129,8 +135,10 @@ if __name__ == '__main__':
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(feature, response, 0.75)
-
-
+    print(train_X.shape, end='\n')
+    print(train_y.shape, end='\n')
+    print(test_X.shape, end='\n')
+    print(test_y.shape, end='\n')
 
     # Question 4 - Fit model over increasing percentages of the overall training data
     # For every percentage p in 10%, 11%, ..., 100%, repeat the following 10 times:
@@ -141,26 +149,44 @@ if __name__ == '__main__':
     # Then plot average loss as function of training size with error ribbon of size (mean-2*std, mean+2*std)
 
     lin_reg = LinearRegression(include_intercept=True)
-    NUM_OF_ITERATIONS = 1
+    NUM_OF_ITERATIONS = 10
     PERCENT_DENSITY = 10
     NUM_OF_PERCENT = int(100 / PERCENT_DENSITY)
-    list_of_loss = np.zeros(NUM_OF_PERCENT - 1)
+    list_of_loss = np.zeros(shape=(NUM_OF_PERCENT, NUM_OF_ITERATIONS))
 
     test_X_nparray = test_X.to_numpy(dtype=float)
     test_y_nparray = test_y.to_numpy(dtype=float)
     j = 0
-    for p in range(PERCENT_DENSITY, 100, PERCENT_DENSITY):
+    x = np.linspace(PERCENT_DENSITY, 101, PERCENT_DENSITY)
+    for p in range(PERCENT_DENSITY, 101, PERCENT_DENSITY):
         for i in range(NUM_OF_ITERATIONS):
-            sampled_X = train_X.sample(frac=0.01 * p).to_numpy(dtype=float)
-            sampled_y = train_y.sample(frac=0.01 * p).to_numpy(dtype=float)
+            print(0.01 * p)
+            sampled_X = train_X.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
+            sampled_y = train_y.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
             lin_reg.fit(sampled_X, sampled_y)
             #print(lin_reg.loss(test_X_nparray, test_y_nparray))
-            list_of_loss[j] = list_of_loss[j] + (lin_reg.loss(test_X_nparray, test_y_nparray))
+            list_of_loss[j][i] = lin_reg.loss(test_X_nparray, test_y_nparray)
         j += 1
         print(j)
-    list_of_loss /= j
-    list_of_variance =
+    list_of_mean = np.mean(list_of_loss, axis=1)
+    list_of_var = np.var(list_of_loss, axis=1)
+    variance_positive = list_of_mean + 2 * list_of_var
+    variance_negative = list_of_mean - 2 * list_of_var
+    print(x)
     print(list_of_loss)
+    print(list_of_mean)
+    print(list_of_var)
+    print(variance_positive)
+    print(variance_negative)
+
+    go.Figure([go.Scatter(x=x, y=list_of_mean - 2 * list_of_var, fill=None, mode="lines", line=dict(color="lightgrey"),
+                          showlegend=False),
+               go.Scatter(x=x, y=list_of_mean + 2 * list_of_var, fill='tonexty', mode="lines", line=dict(color="lightgrey"),
+                          showlegend=False),
+               go.Scatter(x=x, y=list_of_mean, mode="markers+lines", marker=dict(color="black", size=1), showlegend=False)],
+              layout=go.Layout(
+                  title=r"$\text{Mean and Variance of Estimator of Expectation As Function Of Sample Size}$",
+                  height=300)).show()
 
 
 
