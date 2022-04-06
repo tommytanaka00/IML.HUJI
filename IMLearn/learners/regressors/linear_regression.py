@@ -6,6 +6,8 @@ from numpy.linalg import pinv
 from IMLearn.metrics.loss_functions import mean_square_error
 
 
+
+
 class LinearRegression(BaseEstimator):
     """
     Linear Regression Estimator
@@ -50,14 +52,13 @@ class LinearRegression(BaseEstimator):
         -----
         Fits model with or without an intercept depending on value of `self.include_intercept_`
         """
-        # transpose(linalg.pinv(transpose(X))) @ y?
+        if self.include_intercept_:
+            X = np.insert(X, 0, values=1, axis=1)
         psuedo_inverse_X = np.linalg.pinv(X.T).T
+        #print(psuedo_inverse_X.shape[1], y.shape[0])
         assert psuedo_inverse_X.shape[1] == y.shape[0]
         self.coefs_ = psuedo_inverse_X @ y  # the w right?
-        if self.include_intercept_:
-            intercept = np.mean(y)
-            np.insert(self.coefs_, obj=0, values=intercept)
-
+        #print(self.coefs_.shape)
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -73,6 +74,8 @@ class LinearRegression(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        if self.include_intercept_:
+            X = np.insert(X, 0, values=1, axis=1)
         if X.shape[1] != self.coefs_.shape[0]:
             raise ValueError("Matrix dimensions incorrect")
         return X @ self.coefs_
@@ -99,6 +102,13 @@ class LinearRegression(BaseEstimator):
 
 
 
-# if __name__ == '__main__':
-#     lin_reg = LinearRegression()
-#     lin_reg.loss()
+if __name__ == '__main__':
+    pass
+    # print("degree k", X.resize(2,2))
+    # lin_reg.fit(X, y)
+    # #lin_reg2.fit(X, y)
+    # print(lin_reg.predict(X))
+
+
+
+
