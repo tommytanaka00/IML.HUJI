@@ -20,7 +20,7 @@ class PolynomialFitting(BaseEstimator):
         """
         super().__init__()
         self._degree = k
-        self._lin_reg = LinearRegression()
+        self._lin_reg = LinearRegression(include_intercept=False)
 
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -34,7 +34,7 @@ class PolynomialFitting(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        self._lin_reg.fit(X, y)
+        self._lin_reg.fit(self.__transform(X), y)
 
 
 
@@ -52,7 +52,7 @@ class PolynomialFitting(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return self._lin_reg.predict(X)
+        return self._lin_reg.predict(self.__transform(X))
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -71,7 +71,7 @@ class PolynomialFitting(BaseEstimator):
         loss : float
             Performance under MSE loss function
         """
-        return self._lin_reg.loss(X, y)
+        return self._lin_reg.loss(self.__transform(X), y)
 
     def __transform(self, X: np.ndarray) -> np.ndarray:
         """
