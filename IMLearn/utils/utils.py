@@ -33,6 +33,8 @@ def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .7
         Responses of test samples
 
     """
+    # Split X and y using the same random state. This ensures that if
+    # the sizes of X and y are the same, it will be sampled in the same way
     training_X = X.sample(frac=train_proportion, random_state=25)
     testing_X = X.drop(training_X.index)
     training_y = y.sample(frac=train_proportion, random_state=25)

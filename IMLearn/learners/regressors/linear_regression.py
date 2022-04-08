@@ -55,10 +55,7 @@ class LinearRegression(BaseEstimator):
         if self.include_intercept_:
             X = np.insert(X, 0, values=1, axis=1)
         psuedo_inverse_X = np.linalg.pinv(X.T).T
-        #print(psuedo_inverse_X.shape[1], y.shape[0])
-        assert psuedo_inverse_X.shape[1] == y.shape[0]
-        self.coefs_ = psuedo_inverse_X @ y  # the w right?
-        #print(self.coefs_.shape)
+        self.coefs_ = psuedo_inverse_X @ y  # the w
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -76,8 +73,6 @@ class LinearRegression(BaseEstimator):
         """
         if self.include_intercept_:
             X = np.insert(X, 0, values=1, axis=1)
-        if X.shape[1] != self.coefs_.shape[0]:
-            raise ValueError("Matrix dimensions incorrect")
         return X @ self.coefs_
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -100,14 +95,6 @@ class LinearRegression(BaseEstimator):
         y_hat = self.predict(X)
         return mean_square_error(y, y_hat)
 
-
-
-if __name__ == '__main__':
-    pass
-    # print("degree k", X.resize(2,2))
-    # lin_reg.fit(X, y)
-    # #lin_reg2.fit(X, y)
-    # print(lin_reg.predict(X))
 
 
 
