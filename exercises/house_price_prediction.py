@@ -1,3 +1,5 @@
+import os
+
 from IMLearn.utils import split_train_test
 from IMLearn.learners.regressors import LinearRegression
 
@@ -40,9 +42,9 @@ def load_data(filename: str):
         house_prices_df = house_prices_df.drop(c, axis='columns')
 
     # add in only the values that make sense
-    for c in ["price", "sqft_living", "sqft_lot", "sqft_above", "sqft_living15", "sqft_lot15"]:
+    for c in ["floors", "bathrooms", "price", "sqft_living", "sqft_lot", "sqft_above", "sqft_living15", "sqft_lot15"]:
         house_prices_df = house_prices_df[house_prices_df[c] > 0]
-    for c in ["floors", "bathrooms", "sqft_basement"]:
+    for c in ["sqft_basement"]:
         house_prices_df = house_prices_df[house_prices_df[c] >= 0]
 
     # remove houses older than 300 years old
@@ -74,7 +76,7 @@ def load_data(filename: str):
     house_prices_df = house_prices_df[house_prices_df["sqft_lot15"] < 500000]
 
     #incert intercept
-    house_prices_df.insert(0, 'intercept', 1, True)
+    # house_prices_df.insert(0, 'intercept', 1, True)
 
     return house_prices_df.drop("price", axis='columns'), house_prices_df.price
 
@@ -96,21 +98,14 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
     output_path: str (default ".")
         Path to folder in which plots are saved
     """
+    X = X.loc[:, ~(X.columns.str.contains('^zipcode_', case=False))]
     for col in X:
-        rho = pearlson_correlation(X[col], y)
-
+        rho = np.cov(X[col], y)[0, 1] / (np.std(X[col]) * np.std(y))
         fig = px.scatter(pd.DataFrame({'x': X[col], 'y': y}), x="x", y="y", trendline="ols",
-                         title=f"Correlation Between {col} Values and Price Pearson Correlation {rho}",
+                         title=f"Correlation between {col} Values and Price"
+                               f"<br> with Pearson Correlation {rho}",
                          labels={"x": f"{col} Values", "y": "Price"})
-        fig.write_image(output_path + "/pearson.correlation.%s.png" % col)
-
-
-def pearlson_correlation(feature, response) -> float:
-    stds = (np.std(feature) * np.std(response))
-    if stds != 0:
-        return np.cov(feature, response) / (np.std(feature) * np.std(response))
-    return 0
-
+        fig.write_image(output_path + "/%s.pearson.correlation.png" % col)
 
 
 if __name__ == '__main__':
@@ -119,7 +114,10 @@ if __name__ == '__main__':
     feature, response = load_data("../datasets/house_prices.csv")
 
     # Question 2 - Feature evaluation with respect to response
-    feature_evaluation(feature, response)
+    if not os.path.exists("./pearson_correlations"):
+        os.mkdir("./pearson_correlations")
+
+    feature_evaluation(feature, response, "./pearson_correlations")
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(feature, response, 0.75)
@@ -143,24 +141,24 @@ if __name__ == '__main__':
 
     test_X_nparray = test_X.to_numpy(dtype=float)
     test_y_nparray = test_y.to_numpy(dtype=float)
-    j = 0
     x = np.linspace(PERCENT_DENSITY, 100, PERCENT_DENSITY)
     for p in range(PERCENT_DENSITY, 101, PERCENT_DENSITY):
-        list_of_loss = []
+        list_of_loss.clear()
         for i in range(NUM_OF_ITERATIONS):
             sampled_X = train_X.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
             sampled_y = train_y.sample(frac=0.01 * p, random_state=i).to_numpy(dtype=float)
             lin_reg.fit(sampled_X, sampled_y)
             list_of_loss.append(lin_reg.loss(test_X_nparray, test_y_nparray))
-        j += 1
+
         list_of_mean.append(np.mean(list_of_loss))
         list_of_std.append(np.std(list_of_loss))
+
     list_of_mean = np.array(list_of_mean)
     list_of_std = np.array(list_of_std)
     std_positive = list_of_mean + 2 * list_of_std
     std_negative = list_of_mean + (-2) * list_of_std
 
-    mean_of_esimator = go.Figure((go.Scatter(x=x, y=list_of_mean, mode="markers+lines",name="Mean Prediction", line=dict(dash="dash"),
+    mean_of_estimator = go.Figure((go.Scatter(x=x, y=list_of_mean, mode="markers+lines",name="Mean Prediction", line=dict(dash="dash"),
                           marker=dict(color="green", opacity=0.8)),
 
                go.Scatter(x=x, y=std_positive, fill=None, mode="lines",
@@ -169,12 +167,14 @@ if __name__ == '__main__':
 
                go.Scatter(x=x, y=std_negative, fill='tonexty', mode="lines",
                           line=dict(color="lightgrey"),
-                          showlegend=False),
-               ),
-              layout=go.Layout(
-                  title=r"$\text{Mean and std of Estimator of Expectation As Function Of Sample Size}$"))
-    mean_of_esimator.update_xaxes(dtick=10)
-    mean_of_esimator.show()
+                          showlegend=False))
+                                  )
+    mean_of_estimator.update_xaxes(dtick=10)
+    mean_of_estimator.update_layout(
+        title=r"$\text{Mean and std of Estimator Loss As Function Of Sample Size}$",
+        xaxis_title=r"$\text{Sample Percentage}$",
+        yaxis_title=r"$\text{MSE Loss}$")
+    mean_of_estimator.show()
 
 
 
