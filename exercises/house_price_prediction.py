@@ -110,14 +110,18 @@ def feature_evaluation(X: pd.DataFrame, y: pd.Series, output_path: str = ".") ->
 
 if __name__ == '__main__':
     np.random.seed(0)
+    HOUSE_PRICE_DIR = "./house_price_prediction"
+    if not os.path.exists(HOUSE_PRICE_DIR):
+        os.mkdir(HOUSE_PRICE_DIR)
     # Question 1 - Load and preprocessing of housing prices dataset
     feature, response = load_data("../datasets/house_prices.csv")
 
-    # Question 2 - Feature evaluation with respect to response
-    if not os.path.exists("./pearson_correlations"):
-        os.mkdir("./pearson_correlations")
 
-    feature_evaluation(feature, response, "./pearson_correlations")
+    # Question 2 - Feature evaluation with respect to response
+    if not os.path.exists(HOUSE_PRICE_DIR + "/pearson_correlations"):
+        os.mkdir(HOUSE_PRICE_DIR + "/pearson_correlations")
+
+    feature_evaluation(feature, response, HOUSE_PRICE_DIR+ "/pearson_correlations")
 
     # Question 3 - Split samples into training- and testing sets.
     train_X, train_y, test_X, test_y = split_train_test(feature, response, 0.75)
@@ -171,10 +175,10 @@ if __name__ == '__main__':
                                   )
     mean_of_estimator.update_xaxes(dtick=10)
     mean_of_estimator.update_layout(
-        title=r"$\text{Mean and std of Estimator Loss As Function Of Sample Size}$",
-        xaxis_title=r"$\text{Sample Percentage}$",
-        yaxis_title=r"$\text{MSE Loss}$")
-    mean_of_estimator.show()
+        title="Mean and std of Estimator Loss As Function Of Sample Size",
+        xaxis_title="Sample Percentage",
+        yaxis_title="MSE Loss")
+    mean_of_estimator.write_image(HOUSE_PRICE_DIR+ "/loss_sample_size.png", width=1264, height=551)
 
 
 

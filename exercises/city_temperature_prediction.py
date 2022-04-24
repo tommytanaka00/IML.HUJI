@@ -1,3 +1,5 @@
+import os
+
 import IMLearn.learners.regressors.linear_regression
 from IMLearn.learners.regressors import PolynomialFitting
 from IMLearn.utils import split_train_test
@@ -46,6 +48,9 @@ def load_data(filename: str) -> pd.DataFrame:
 
 if __name__ == '__main__':
     np.random.seed(0)
+    CITY_TEMP_DIR = "./city_temperature_prediction"
+    if not os.path.exists(CITY_TEMP_DIR):
+        os.mkdir(CITY_TEMP_DIR)
     # Question 1 - Load and preprocessing of city temperature dataset
     city_temp_df = load_data("../datasets/City_Temperature.csv")
 
@@ -57,7 +62,7 @@ if __name__ == '__main__':
     scatter_plot_temp_day = px.scatter(x=israel_temp_df['DayOfYear'], y=israel_temp_df['Temp'], color=israel_temp_df['Year'],
                      labels = {'x': "Day of the year}", 'y': "Avg Temperature}"},
                      title=f"{COUNTRY} Average Daily Temperature as a function of the Day Of The Year")
-    scatter_plot_temp_day.show()
+    scatter_plot_temp_day.write_image(CITY_TEMP_DIR + f"/{COUNTRY}_temp_at_day.png", width=1264, height=551)
 
     grouped_by_month = israel_temp_df.groupby(['Month'])['Temp'].agg(['std']).reset_index()
     bar_plot_std_month = px.bar(grouped_by_month, x='Month', y='std',
@@ -65,17 +70,19 @@ if __name__ == '__main__':
            title=f"Standard deviation of average temperatures each month in {COUNTRY}")
     bar_plot_std_month.update_traces(marker_color='green')
     bar_plot_std_month.update_xaxes(dtick=1)
-    bar_plot_std_month.show()
+    bar_plot_std_month.write_image(CITY_TEMP_DIR + f"/std_temp_in_{COUNTRY}.png", width=1264, height=551)
+
 
 
     # Question 3 - Exploring differences between countries
     grouped_by_country_month = city_temp_df.groupby(['Country', 'Month'], as_index=False)['Temp'].agg(['mean','std']).reset_index()
     line_plot = px.line(grouped_by_country_month, x='Month', y='mean', error_y='std', color='Country',
                         labels={'Month': "Month", 'mean':'Mean', 'std': "Standard deviation"},
-    title = f"{COUNTRY} Average Daily Temperature as a function of the Day Of The Year")
+    title = f"Average Daily Temperature of countries each month")
 
     line_plot.update_xaxes(dtick=1)
-    line_plot.show()
+    line_plot.write_image(CITY_TEMP_DIR + f"/avg_temp_in_month.png", width=1264, height=551)
+
 
 
     # Question 4 - Fitting model for different values of `k`
@@ -84,14 +91,16 @@ if __name__ == '__main__':
     for k in range(1, 11):
         poly_fit = PolynomialFitting(k)
         poly_fit.fit(train_X.to_numpy(dtype=float), train_y.to_numpy(dtype=float))
-        list_of_loss.append(poly_fit.loss(test_X.to_numpy(dtype=float), test_y.to_numpy(dtype=float)))
+        loss = poly_fit.loss(test_X.to_numpy(dtype=float), test_y.to_numpy(dtype=float))
+        list_of_loss.append(round(loss, 2))
 
-    bar_plot_loss_degree = px.bar(x=range(1, 11), y=list_of_loss,
+    bar_plot_loss_degree = px.bar(x=range(1, 11), y=list_of_loss, text=list_of_loss,
            labels={'x': "Value of k", 'y': "Loss"},
            title="The Loss (test error) recorded when Polynomial Fitting for each degree k")
 
     bar_plot_loss_degree.update_xaxes(dtick=1)
-    bar_plot_loss_degree.show()
+    bar_plot_loss_degree.write_image(CITY_TEMP_DIR + f"/loss_of_k_poly_fitting.png", width=1264, height=551)
+
 
 
     # Question 5 - Evaluating fitted model on different countries
@@ -105,11 +114,12 @@ if __name__ == '__main__':
         country_temp_df = city_temp_df.loc[city_temp_df['Country'] == country]
         train_X, train_y, test_X, test_y = split_train_test(country_temp_df['DayOfYear'], country_temp_df['Temp'], 0.75)
         poly_fit_best_k.fit(train_X.to_numpy(dtype=float), train_y.to_numpy(dtype=float))
-        dict_of_loss[country] = (poly_fit_best_k.loss(test_X.to_numpy(dtype=float), test_y.to_numpy(dtype=float)))
+        loss = poly_fit_best_k.loss(test_X.to_numpy(dtype=float), test_y.to_numpy(dtype=float))
+        dict_of_loss[country] = (round(loss, 2))
 
-    bar_plot_poly_fit = px.bar(x=dict_of_loss.keys(), y=dict_of_loss.values(),
+    bar_plot_poly_fit = px.bar(x=dict_of_loss.keys(), y=dict_of_loss.values(), text=dict_of_loss.values(),
            labels={'x': "Country", 'y': "Loss"},
            title=f"Model loss in each country when fitting with polynomial of degree {best_fit_k}, "
                  f"which was the best fit for {COUNTRY}")
     bar_plot_poly_fit.update_traces(marker_color='orange')
-    bar_plot_poly_fit.show()
+    bar_plot_poly_fit.write_image(CITY_TEMP_DIR + f"/best_fit_loss.png", width=1264, height=551)
