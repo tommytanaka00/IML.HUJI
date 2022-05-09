@@ -3,10 +3,10 @@ import numpy as np
 import pandas as pd
 
 
-def split_train_test(X: pd.DataFrame, y: pd.Series, train_proportion: float = .75) \
-        -> Tuple[pd.DataFrame, pd.Series, pd.DataFrame, pd.Series]:
+def split_train_test(X: pd.DataFrame, y: pd.DataFrame, train_proportion: float = .25) \
+        -> Tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, pd.DataFrame]:
     """
-    Randomly split given sample to a training- and testing sample
+    Split given sample to a training- and testing sample
 
     Parameters
     ----------
@@ -60,5 +60,4 @@ def confusion_matrix(a: np.ndarray, b: np.ndarray) -> np.ndarray:
         A confusion matrix where the value of the i,j index shows the number of times value `i` was found in vector `a`
         while value `j` vas found in vector `b`
     """
-    matrix = np.ndarray()
-    return matrix
+    raise NotImplementedError()
