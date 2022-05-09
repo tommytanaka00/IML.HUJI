@@ -1,8 +1,9 @@
 from __future__ import annotations
 from typing import Tuple, NoReturn
-from ...base import BaseEstimator
+from IMLearn.base.base_estimator import BaseEstimator
 import numpy as np
 from itertools import product
+from IMLearn.metrics import misclassification_error
 
 
 class DecisionStump(BaseEstimator):
@@ -20,7 +21,7 @@ class DecisionStump(BaseEstimator):
     self.sign_: int
         The label to predict for samples where the value of the j'th feature is about the threshold
     """
-    def __init__(self) -> DecisionStump:
+    def __init__(self) -> None:
         """
         Instantiate a Decision stump classifier
         """
@@ -39,7 +40,60 @@ class DecisionStump(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+        if X.shape[0] != y.size:
+            raise ValueError("Not matching idxes")
+        #self.j_ = self.sign_ = self.threshold_ = 0
+
+        min_loss = np.infty
+        for j in range(X.shape[1]):
+            for sign in [1, -1]:
+                jth_feature = X[:, j]
+                threshold, thr_err = self._find_threshold(jth_feature, y, sign)
+                if thr_err < min_loss:
+                    min_loss = thr_err
+                    self.sign_ = sign
+                    self.j_ = j
+                    self.threshold_ = threshold
+
+
+
+
+        # # By Gini values
+        # list_of_gini_vals = []
+        # for col in range(X.shape[1]):
+        #     gini_val_for_feature = 0
+        #     NUM_OF_INST = 0
+        #     NUM_OF_1 = 1
+        #     NUM_OF_MINUS_1 = 2
+        #     #Count the number of instances
+        #     num_of_samples = y.size
+        #     aaaaaa = dict()
+        #     for type_of_feature,i in enumerate(X[:, col]):
+        #
+        #
+        #         if type_of_feature not in aaaaaa:
+        #             # type of feature mapped to array with [num of instances, num of 1s, num of -1]
+        #             aaaaaa[type_of_feature] = np.zeros(shape=3)
+        #         else:
+        #             aaaaaa[type_of_feature][NUM_OF_INST] += 1
+        #             if y[i] == 1:
+        #                 aaaaaa[type_of_feature][NUM_OF_1] += 1
+        #             else:
+        #                 aaaaaa[type_of_feature][NUM_OF_MINUS_1] += 1
+        #     gini_vals = dict()
+        #     for type_of_feature in aaaaaa.keys():
+        #         arr = aaaaaa[type_of_feature]
+        #
+        #         type_prob = arr[NUM_OF_INST] / num_of_samples
+        #         gini_val = 1 - arr[NUM_OF_1]/arr[NUM_OF_INST] - arr[NUM_OF_MINUS_1]/arr[NUM_OF_INST]
+        #         gini_val_for_feature += type_prob * gini_val
+        #
+        #     list_of_gini_vals.append(gini_val_for_feature)
+        # root_feature = np.argmin(list_of_gini_vals)
+        # self.j_ = root_feature
+
+
+
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -63,7 +117,11 @@ class DecisionStump(BaseEstimator):
         Feature values strictly below threshold are predicted as `-sign` whereas values which equal
         to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        feature_to_split = X[: , self.j_]
+        print("feature to split is ", feature_to_split)
+        return np.array([self.sign_ if feature_to_split[i] >= self.threshold_ else -self.sign_
+                         for i in range(feature_to_split.size)])
+
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
         """
@@ -95,7 +153,20 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        raise NotImplementedError()
+        min_error = 1
+        threshold = values[0]
+        for value in values:
+            lst = np.array([sign if val>=value else -sign for val in values])
+            print(lst)
+            error = misclassification_error(labels, lst, normalize=True)
+            print(value, error)
+            if error < min_error:
+                min_error = error
+                threshold = value
+
+        print(threshold, min_error)
+        return threshold, min_error
+
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -114,4 +185,12 @@ class DecisionStump(BaseEstimator):
         loss : float
             Performance under missclassification loss function
         """
-        raise NotImplementedError()
+        y_hat = self.predict(X)
+        return misclassification_error(y, y_hat, normalize=True)
+
+
+if __name__ == '__main__':
+    ds = DecisionStump()
+    ds._find_threshold(np.array([3,4,10,9,1]), np.array([1, -1, 1, 1, -1]), 1)
+    ds.fit(np.array([[1],[10],[100]]), np.array([1, -1, 1]))
+    print(ds.predict(np.array([[2,3,4,5],[10,5,3,40],[100,200, 1, 400]])))
