@@ -55,9 +55,6 @@ class DecisionStump(BaseEstimator):
                     self.j_ = j
                     self.threshold_ = threshold
 
-
-
-
         # # By Gini values
         # list_of_gini_vals = []
         # for col in range(X.shape[1]):
@@ -94,7 +91,6 @@ class DecisionStump(BaseEstimator):
 
 
 
-
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
         Predict responses for given samples using fitted estimator
@@ -118,7 +114,7 @@ class DecisionStump(BaseEstimator):
         to or above the threshold are predicted as `sign`
         """
         feature_to_split = X[: , self.j_]
-        print("feature to split is ", feature_to_split)
+        # print("feature to split is ", feature_to_split)
         return np.array([self.sign_ if feature_to_split[i] >= self.threshold_ else -self.sign_
                          for i in range(feature_to_split.size)])
 
@@ -157,14 +153,14 @@ class DecisionStump(BaseEstimator):
         threshold = values[0]
         for value in values:
             lst = np.array([sign if val>=value else -sign for val in values])
-            print(lst)
+            #print(lst)
             error = misclassification_error(labels, lst, normalize=True)
-            print(value, error)
+            #print(value, error)
             if error < min_error:
                 min_error = error
                 threshold = value
 
-        print(threshold, min_error)
+        #print(threshold, min_error)
         return threshold, min_error
 
 
@@ -191,6 +187,8 @@ class DecisionStump(BaseEstimator):
 
 if __name__ == '__main__':
     ds = DecisionStump()
-    ds._find_threshold(np.array([3,4,10,9,1]), np.array([1, -1, 1, 1, -1]), 1)
-    ds.fit(np.array([[1],[10],[100]]), np.array([1, -1, 1]))
-    print(ds.predict(np.array([[2,3,4,5],[10,5,3,40],[100,200, 1, 400]])))
+
+    a = ds._find_threshold(np.array([1,2,3,4,5, 6]), np.array([1, 1, -1, 1, 1]), 1)
+
+    ds.fit(np.array([[90, 10, 40, 30],[500, 600, 200, 300], [1,2,3,4]]).T, np.array([-1, 1, -1, 1]))
+    print(ds.j_, ds.threshold_, ds.sign_)

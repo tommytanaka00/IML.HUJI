@@ -49,8 +49,34 @@ class AdaBoost(BaseEstimator):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        num_of_samples = y.size
-        self.weights_
+        m = y.size
+        self.models_ = []
+        self.weights_ = np.zeros(shape=self.iterations_)
+        self.D_ = np.array([1/m for i in range (m)])
+        np.append(self.weights_, np.array([1/m for i in range (m)]))
+        for t in range(self.iterations_):
+            # Invote base learner
+            weak_learner = self.wl_()
+            weak_learner.fit(X, y * self.D_)
+            self.models_.append(weak_learner)
+            # Compute error todo: not sure
+            y_hat = weak_learner.predict(X)
+            #indicator_vector = np.array(y_hat != y)
+            indicator_vector = np.array([1 if y[i] == y_hat[i] else 0 for i in range(y.size)]) # todo: test
+            error = np.dot(self.D_, indicator_vector)
+            # Compute weight
+            alpha = 1/2 * np.log(1/error - 1)
+            self.weights_[t] = alpha
+
+            # Update sample weight
+            h_X = weak_learner.predict(X)
+            for i in range(m):
+                self.D_[i] *= np.exp(-alpha * y[i] * h_X[i])
+            # Normalize
+            for i in range(m):
+                self.D_[i] /= sum(self.D_)
+
+
 
     def _predict(self, X):
         """
@@ -66,7 +92,12 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        raise NotImplementedError()
+        asdlfansldjvn = self.weights_[0] * self.models_[-1].predict(X)
+        for t in range(1, self.iterations_):
+            asdlfansldjvn += self.weights_[t] * self.models_[-1].predict(X) #todo test
+
+
+        return np.sign(asdlfansldjvn)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
