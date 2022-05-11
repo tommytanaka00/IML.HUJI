@@ -58,12 +58,17 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
         train_error[i] = adaboost.loss(train_X, train_y)
         test_error[i] = adaboost.loss(test_X, test_y)
 
-
-    go.Figure(data=[go.Line(x=np.linspace(0, n_learners, 1), y=[train_error, test_error], mode="markers", showlegend=False
-                               # ,marker=dict(color=y, symbol=symbols[y], line=dict(color="black", width=1),
-                               #             colorscale=[custom[0], custom[-1]])
+    go.Scatter(x=x, y=list_of_mean, mode="markers+lines", name="Mean Prediction", line=dict(dash="dash"),
+               marker=dict(color="green", opacity=0.8))
+    )
+    fig = go.Figure(data=go.Scatter(x=np.arange(n_learners), y=[train_error, test_error]))
+    fig = go.Figure(data=[go.Line(x=np.arange(n_learners), y=[train_error, test_error], mode="markers", showlegend=False
+                               ,marker=dict(color=[train_error, test_error],  line=dict(color="black", width=1),
+                                           colorscale=[custom[0], custom[-1]])
                             )],
-              layout=go.Layout(title=rf"$\textbf{{(1) LOL Dataset}}$")).show()
+              layout=go.Layout(title=rf"$\textbf{{(1) LOL Dataset}}$"))
+
+    fig.show()
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
