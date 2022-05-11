@@ -53,28 +53,32 @@ class AdaBoost(BaseEstimator):
         self.models_ = []
         self.weights_ = np.zeros(shape=self.iterations_)
         self.D_ = np.array([1/m for i in range (m)])
-        np.append(self.weights_, np.array([1/m for i in range (m)]))
         for t in range(self.iterations_):
             # Invote base learner
             weak_learner = self.wl_()
+
             weak_learner.fit(X, y * self.D_)
             self.models_.append(weak_learner)
             # Compute error todo: not sure
-            y_hat = weak_learner.predict(X)
+            h_X = weak_learner.predict(X)
             #indicator_vector = np.array(y_hat != y)
-            indicator_vector = np.array([1 if y[i] == y_hat[i] else 0 for i in range(y.size)]) # todo: test
+            indicator_vector = np.array([1 if y[i] == h_X[i] else 0 for i in range(y.size)]) # todo: test
             error = np.dot(self.D_, indicator_vector)
             # Compute weight
-            alpha = 1/2 * np.log(1/error - 1)
+            if error == 0:
+                alpha = 1
+            else:
+                alpha = -1/2 * np.log(1/error - 1)
             self.weights_[t] = alpha
 
             # Update sample weight
-            h_X = weak_learner.predict(X)
             for i in range(m):
                 self.D_[i] *= np.exp(-alpha * y[i] * h_X[i])
             # Normalize
+            sum_of_D = sum(self.D_)
             for i in range(m):
-                self.D_[i] /= sum(self.D_)
+                self.D_[i] /= sum_of_D
+        print("weights is: " ,self.weights_)
 
 
 
@@ -92,12 +96,7 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        asdlfansldjvn = self.weights_[0] * self.models_[-1].predict(X)
-        for t in range(1, self.iterations_):
-            asdlfansldjvn += self.weights_[t] * self.models_[-1].predict(X) #todo test
-
-
-        return np.sign(asdlfansldjvn)
+        return self.partial_predict(X, self.iterations_)
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -136,7 +135,10 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
-        return self.predict(X[: , 0:T])
+        asdlfansldjvn = self.weights_[0] * self.models_[0].predict(X)
+        for t in range(1, T):
+            asdlfansldjvn += self.weights_[t] * self.models_[t].predict(X)  # todo test
+        return np.sign(asdlfansldjvn)
 
 
     def partial_loss(self, X: np.ndarray, y: np.ndarray, T: int) -> float:
@@ -161,3 +163,11 @@ class AdaBoost(BaseEstimator):
         """
         y_hat = self.partial_predict(X, T)
         return misclassification_error(y, y_hat)
+
+from IMLearn.learners.classifiers import DecisionStump
+if __name__ == '__main__':
+    X = np.array([[1,1], [1,5], [3,3], [5,1], [5,5]])
+    y = np.array([1, 1, -1, 1, 1])
+    decision_stump = DecisionStump()
+    adaboost = AdaBoost(lambda :decision_stump, 3)
+    adaboost.fit(X, y)

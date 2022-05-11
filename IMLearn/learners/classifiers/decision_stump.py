@@ -115,8 +115,9 @@ class DecisionStump(BaseEstimator):
         """
         feature_to_split = X[: , self.j_]
         # print("feature to split is ", feature_to_split)
-        return np.array([self.sign_ if feature_to_split[i] >= self.threshold_ else -self.sign_
+        arr = np.array([self.sign_ if feature_to_split[i] >= self.threshold_ else -self.sign_
                          for i in range(feature_to_split.size)])
+        return arr
 
 
     def _find_threshold(self, values: np.ndarray, labels: np.ndarray, sign: int) -> Tuple[float, float]:
@@ -149,12 +150,14 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        min_error = 1
+        min_error = np.infty
         threshold = values[0]
+
         for value in values:
             lst = np.array([sign if val>=value else -sign for val in values])
-            #print(lst)
-            error = misclassification_error(labels, lst, normalize=True)
+            indicator_if_misclassified = [1 if np.sign(lst[i]) != np.sign(labels[i]) else 0 for i in range(labels.size)]
+
+            error = np.dot(np.abs(labels), indicator_if_misclassified)
             #print(value, error)
             if error < min_error:
                 min_error = error
@@ -188,7 +191,9 @@ class DecisionStump(BaseEstimator):
 if __name__ == '__main__':
     ds = DecisionStump()
 
-    a = ds._find_threshold(np.array([1,2,3,4,5, 6]), np.array([1, 1, -1, 1, 1]), 1)
+    # a = ds._find_threshold(np.array([1,2,3,4,5, 6]), np.array([1, 1, -1, 1, 1]), 1)
+    #
+    # ds.fit(np.array([[90, 10, 40, 30],[500, 600, 200, 300], [1,2,3,4]]).T, np.array([-1, 1, -1, 1]))
+    # print(ds.j_, ds.threshold_, ds.sign_)
 
-    ds.fit(np.array([[90, 10, 40, 30],[500, 600, 200, 300], [1,2,3,4]]).T, np.array([-1, 1, -1, 1]))
-    print(ds.j_, ds.threshold_, ds.sign_)
+    ds.fit(np.array([[3], [4], [5]]), np.array([0.8, -0.2, 0.6]))
