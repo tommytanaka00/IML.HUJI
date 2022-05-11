@@ -58,9 +58,9 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
         train_error[i] = adaboost.loss(train_X, train_y)
         test_error[i] = adaboost.loss(test_X, test_y)
 
-    go.Scatter(x=x, y=list_of_mean, mode="markers+lines", name="Mean Prediction", line=dict(dash="dash"),
-               marker=dict(color="green", opacity=0.8))
-    )
+    # go.Scatter(x=x, y=list_of_mean, mode="markers+lines", name="Mean Prediction", line=dict(dash="dash"),
+    #            marker=dict(color="green", opacity=0.8))
+    # )
     fig = go.Figure(data=go.Scatter(x=np.arange(n_learners), y=[train_error, test_error]))
     fig = go.Figure(data=[go.Line(x=np.arange(n_learners), y=[train_error, test_error], mode="markers", showlegend=False
                                ,marker=dict(color=[train_error, test_error],  line=dict(color="black", width=1),
