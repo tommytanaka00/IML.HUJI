@@ -59,19 +59,22 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     fig = go.Figure(
         (go.Scatter(x=x, y=np.array(train_error), fill=None, mode="lines",
                     line=dict(color="blue"),
+                    name="Train Error",
                     showlegend=False),
 
          go.Scatter(x=x, y=np.array(test_error), fill=None, mode="lines",
                     line=dict(color="green"),
+                    name="Test Error",
                     showlegend=False))
         )
-    #fig.update_xaxes(dtick=1)
     fig.update_layout(
-        title="Mean and std of Estimator Loss As Function Of Sample Size",
-        xaxis_title="Sample Percentage",
-        yaxis_title="MSE Loss")
+        title="Training and Test error as a function of the Number of Fitted Learners",
+        xaxis_title="Number of Fitted Learners",
+        yaxis_title="Misclassification Loss")
 
     fig.show()
+
+
 
     # Question 2: Plotting decision surfaces
     T = [5, 50, 100, 250]
@@ -82,22 +85,20 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     losses = []
     fig = make_subplots(rows=2, cols=3, subplot_titles=[rf"$\textbf{{{iterations}}}$" for iterations in T],
                         horizontal_spacing=0.01, vertical_spacing=.03)
-
-    for i, iterations in enumerate(T):
-        # adaboost.partial_predict(test_X, iterations)
-        def predict_T(X):
-            return adaboost.partial_predict(X, iterations)
-        fig.add_traces([decision_surface(predict_T, lims[0], lims[1], showscale=False),
-                        go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers", showlegend=False,
+    scatter = go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers", showlegend=False,
                                    marker=dict(color=test_y,
                                                #symbol=symbols[y],
                                                colorscale=[custom[0], custom[-1]],
-                                               line=dict(color="black", width=1)))],
+                                               line=dict(color="black", width=1)))
+
+    for i, iterations in enumerate(T):
+        def predict_T(X):
+            return adaboost.partial_predict(X, iterations)
+        fig.add_traces([decision_surface(predict_T, lims[0], lims[1], showscale=False), scatter],
                         rows=(i // 3) + 1, cols=(i % 3) + 1)
-        #losses.append(adaboost.partial_loss(test_X, test_y, iterations))
 
 
-    fig.update_layout(title=rf"$\textbf{{(2) Decision Boundaries Of Models - Dataset}}$", margin=dict(t=100)) \
+    fig.update_layout(title=rf"$\textbf{{}}$", margin=dict(t=100)) \
         .update_xaxes(visible=False).update_yaxes(visible=False)
     fig.show()
 
@@ -105,29 +106,30 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     for i in range(1, 250):
         losses.append(adaboost.partial_loss(test_X, test_y, i))
     best_T = int(np.argmin(np.array(losses)))
-    print(best_T)
+
     best = go.Figure([decision_surface(lambda X: adaboost.partial_predict(X, best_T) , lims[0], lims[1], showscale=False),
-                        go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers", showlegend=False,
-                                   marker=dict(color=test_y,
-                                               #symbol=symbols[y],
-                                               colorscale=[custom[0], custom[-1]],
-                                               line=dict(color="black", width=1)))
-                      ])
+                      scatter])
     best.show()
 
     # Question 4: Decision surface with weighted samples
+    new_D = adaboost.D_
+    new_D = new_D / np.max(new_D) * 5
     best_with_weight = go.Figure(
-        [decision_surface(lambda X: adaboost.partial_predict(X, best_T), lims[0], lims[1], showscale=False),
-         go.Scatter(x=test_X[:, 0], y=test_X[:, 1], mode="markers", showlegend=False,
-                    marker=dict(color=test_y,
+        [decision_surface(lambda X: adaboost.partial_predict(X, 250), lims[0], lims[1], showscale=False),
+         go.Scatter(x=train_X[:, 0], y=train_X[:, 1], mode="markers", showlegend=False,
+                    marker=dict(color=train_y,
                                 # symbol=symbols[y],
                                 colorscale=[custom[0], custom[-1]],
+                                size=new_D,
                                 line=dict(color="black", width=1)))
          ])
-    best.show()
+    best_with_weight.show()
+
+
 
 
 if __name__ == '__main__':
     np.random.seed(0)
     #fit_and_evaluate_adaboost(0, 30, 20, 5)
     fit_and_evaluate_adaboost(0)
+    fit_and_evaluate_adaboost(0.4)
