@@ -45,8 +45,8 @@ class DecisionStump(BaseEstimator):
         #self.j_ = self.sign_ = self.threshold_ = 0
 
         min_loss = np.infty
-        for j in range(X.shape[1]):
-            for sign in [1, -1]:
+        for sign in [1, -1]:
+            for j in range(X.shape[1]):
                 jth_feature = X[:, j]
                 threshold, thr_err = self._find_threshold(jth_feature, y, sign)
                 if thr_err < min_loss:
@@ -150,21 +150,39 @@ class DecisionStump(BaseEstimator):
         For every tested threshold, values strictly below threshold are predicted as `-sign` whereas values
         which equal to or above the threshold are predicted as `sign`
         """
-        min_error = np.infty
-        threshold = values[0]
+        # min_error = np.infty
+        # threshold = values[0]
+        #
+        # for value in values:
+        #     lst = np.array([sign if val>=value else -sign for val in values])
+        #     indicator_if_misclassified = [1 if np.sign(lst[i]) != np.sign(labels[i]) else 0 for i in range(labels.size)]
+        #
+        #     error = np.dot(np.abs(labels), indicator_if_misclassified)
+        #     #print(value, error)
+        #     if error < min_error:
+        #         min_error = error
+        #         threshold = value
+        #
+        # #print(threshold, min_error)
+        # return threshold, min_error
 
-        for value in values:
-            lst = np.array([sign if val>=value else -sign for val in values])
-            indicator_if_misclassified = [1 if np.sign(lst[i]) != np.sign(labels[i]) else 0 for i in range(labels.size)]
+        lst_of_sorted_idx = np.argsort(values, axis=0)
+        values, labels = values[lst_of_sorted_idx], labels[lst_of_sorted_idx]
 
-            error = np.dot(np.abs(labels), indicator_if_misclassified)
-            #print(value, error)
-            if error < min_error:
-                min_error = error
-                threshold = value
+        y_hat = np.ones(values.shape[0]) * sign
+        all_err = np.ndarray(values.shape)
 
-        #print(threshold, min_error)
-        return threshold, min_error
+        thr_err = np.sum(np.abs(labels[np.sign(y_hat) != np.sign(labels)]))
+        all_err[0] = thr_err
+        y_hat[0] = -sign
+        for i in range(1, values.shape[0]):
+            if np.sign(labels[i - 1]) != sign:
+                thr_err -= np.abs(labels[i - 1])
+            else:
+                thr_err += np.abs(labels[i - 1])
+            all_err[i] = thr_err
+            y_hat[i] = -sign
+        return values[np.argmin(all_err)], np.min(all_err)
 
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
@@ -190,6 +208,8 @@ class DecisionStump(BaseEstimator):
 
 if __name__ == '__main__':
     ds = DecisionStump()
+    ds1 = DecisionStump()
+    ds2 = DecisionStump()
 
     # a = ds._find_threshold(np.array([1,2,3,4,5, 6]), np.array([1, 1, -1, 1, 1]), 1)
     #
@@ -197,3 +217,7 @@ if __name__ == '__main__':
     # print(ds.j_, ds.threshold_, ds.sign_)
 
     ds.fit(np.array([[3], [4], [5]]), np.array([0.8, -0.2, 0.6]))
+    # ds.fit(np.array([[3], [4], [5]]), np.array([0.8, -0.2, 0.6]))
+    # ds.fit(np.array([[3], [4], [5]]), np.array([0.8, -0.2, 0.6]))
+
+

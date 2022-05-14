@@ -51,7 +51,7 @@ class AdaBoost(BaseEstimator):
         """
         m = y.size
         self.models_ = []
-        self.weights_ = np.zeros(shape=self.iterations_)
+        self.weights_ = []
         self.D_ = np.array([1/m for i in range (m)])
         for t in range(self.iterations_):
             # Invote base learner
@@ -62,23 +62,27 @@ class AdaBoost(BaseEstimator):
             # Compute error todo: not sure
             h_X = weak_learner.predict(X)
             #indicator_vector = np.array(y_hat != y)
-            indicator_vector = np.array([1 if y[i] == h_X[i] else 0 for i in range(y.size)]) # todo: test
-            error = np.dot(self.D_, indicator_vector)
+            #indicator_vector = np.array([1 if y[i] == h_X[i] else 0 for i in range(y.size)]) # todo: test
+            #error = np.dot(self.D_, indicator_vector)
+            error = (np.sign(weak_learner.predict(X)) != np.sign(y)) @ self.D_
             # Compute weight
             if error == 0:
                 alpha = 1
             else:
-                alpha = -1/2 * np.log(1/error - 1)
-            self.weights_[t] = alpha
+                alpha = 1/2 * np.log(1/error - 1)
+            self.weights_.append(alpha)
 
             # Update sample weight
-            for i in range(m):
-                self.D_[i] *= np.exp(-alpha * y[i] * h_X[i])
+
+            # for i in range(m):
+            #     self.D_[i] *= np.exp(-alpha * y[i] * h_X[i])
+
+            self.D_ *= np.exp(-alpha * y * h_X)
             # Normalize
             sum_of_D = sum(self.D_)
-            for i in range(m):
-                self.D_[i] /= sum_of_D
-        print("weights is: " ,self.weights_)
+            self.D_ /= sum_of_D
+
+        #print("weights is: " ,self.weights_)
 
 
 
@@ -135,6 +139,8 @@ class AdaBoost(BaseEstimator):
         responses : ndarray of shape (n_samples, )
             Predicted responses of given samples
         """
+        if T > self.iterations_:
+            T = self.iterations_
         asdlfansldjvn = self.weights_[0] * self.models_[0].predict(X)
         for t in range(1, T):
             asdlfansldjvn += self.weights_[t] * self.models_[t].predict(X)  # todo test
