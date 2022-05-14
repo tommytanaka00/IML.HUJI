@@ -170,10 +170,3 @@ class AdaBoost(BaseEstimator):
         y_hat = self.partial_predict(X, T)
         return misclassification_error(y, y_hat)
 
-from IMLearn.learners.classifiers import DecisionStump
-if __name__ == '__main__':
-    X = np.array([[1,1], [1,5], [3,3], [5,1], [5,5]])
-    y = np.array([1, 1, -1, 1, 1])
-    decision_stump = DecisionStump()
-    adaboost = AdaBoost(lambda :decision_stump, 3)
-    adaboost.fit(X, y)

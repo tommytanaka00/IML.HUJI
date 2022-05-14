@@ -45,7 +45,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     train_error_lst = []
     test_error_lst = []
 
-    adaboost = AdaBoost(lambda: DecisionStump(), n_learners)
+    adaboost = AdaBoost(lambda  : DecisionStump(), n_learners)
     adaboost.fit(train_X, train_y)
 
     for t in range(n_learners):
@@ -67,17 +67,15 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     fig.update_layout(
         title=f"Training and Test error as a function of the Number of Fitted Learners (with noise {noise})",
         xaxis_title="Number of Fitted Learners",
-        yaxis_title="Average Misclassification Loss")
+        yaxis_title="Loss")
 
     fig.show()
 
 
 
     # Question 2: Plotting decision surfaces
-    T = [5, 50, 100, 250]
+    T = [5, 50, 100, n_learners]
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
-    adaboost = AdaBoost(lambda  : DecisionStump(), n_learners)
-    adaboost.fit(train_X, train_y)
 
     # Returns a function with Partial Boost with iterations
     def lambda_of_predictT(iterations):
@@ -101,7 +99,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
 
 
     # Question 3: Decision surface of best performing ensemble
-    for i in range(1, 250):
+    for i in range(1, n_learners):
         losses.append(adaboost.partial_loss(test_X, test_y, i))
     best_T = int(np.argmin(np.array(losses)))
 
@@ -117,7 +115,7 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
     new_D = adaboost.D_
     new_D = new_D / np.max(new_D) * 10
     weighted_graph = go.Figure(
-        [decision_surface(lambda_of_predictT(250), lims[0], lims[1], showscale=False),
+        [decision_surface(lambda_of_predictT(n_learners), lims[0], lims[1], showscale=False),
          go.Scatter(x=train_X[:, 0], y=train_X[:, 1], mode="markers", showlegend=False,
                     marker=dict(color=train_y,
                                 colorscale=[custom[0], custom[-1]],
@@ -132,6 +130,5 @@ def fit_and_evaluate_adaboost(noise, n_learners=250, train_size=5000, test_size=
 
 if __name__ == '__main__':
     np.random.seed(0)
-    #fit_and_evaluate_adaboost(0, 30, 20, 5)
     fit_and_evaluate_adaboost(0)
     fit_and_evaluate_adaboost(0.4)
