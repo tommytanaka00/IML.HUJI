@@ -39,14 +39,18 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     """
     split_samples = np.array_split(X, cv)
     split_labels = np.array_split(y, cv)
-    lst_of_losses = []
+    lst_of_losses_train = []
+    lst_of_losses_validation = []
     for i in range(cv):
         part_X = np.concatenate(np.delete(split_samples, 1))
         part_y = np.concatenate(np.delete(split_labels, 1))
         h = estimator.fit(part_X, part_y)
-        lst_of_losses.append(h.loss(part_X, part_y))
-    average = np.average(np.array(lst_of_losses))
-    return average, 0
+        loss = scoring(part_y, h.predict(part_X))
+        lst_of_losses_train.append(h.loss(part_X, part_y))
+        lst_of_losses_validation.append(loss)
+    train_average = np.average(np.array(lst_of_losses_train))
+    validation_average = np.average(np.array(lst_of_losses_validation))
+    return train_average, validation_average
 
 
 
