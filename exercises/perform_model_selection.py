@@ -29,7 +29,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     # Question 1 - Generate dataset for model f(x)=(x+3)(x+2)(x+1)(x-1)(x-2) + eps for eps Gaussian noise
     # and split into training- and testing portions
     f = lambda x : (x+3) * (x ** 2 - 4) * (x ** 2 - 1)
-    epsilon = np.random.normal(0, np.sqrt(noise), n_samples)
+    epsilon = np.random.normal(0, noise, n_samples)
     X = np.random.uniform(-1.2, 2, n_samples)
     noise_less_y = np.array(f(X))
     y = np.array(f(X) + epsilon)
@@ -62,6 +62,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     lst_of_train_err= []
     lst_of_val_err = []
     for k in range(0, 11): #from 0 to 10
+        print(k)
         poly_k = PolynomialFitting(k)
 
         # 0 is train error, 1 is validation error
@@ -71,10 +72,10 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
 
     # todo: plot it
     train_and_validation_err_fig = go.Figure(
-        [go.Scatter(x=np.linspace(0, 11, 10, dtype=int), y=np.array(lst_of_train_err), fill=None, mode="lines",
+        [go.Scatter(x=np.linspace(0, 10, 10, dtype=int), y=np.array(lst_of_train_err), mode="lines+markers",
                     line=dict(color="blue"),
                     name="Train Error"),
-         go.Scatter(x=np.linspace(0, 11, 10, dtype=int), y=np.array(lst_of_val_err), fill=None, mode="lines",
+         go.Scatter(x=np.linspace(0, 10, 10, dtype=int), y=np.array(lst_of_val_err), mode="lines+markers",
                     line=dict(color="green"),
                     name="Validation Error")]
         )
@@ -125,8 +126,10 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     lst_of_val_err_lasso = []
 
     JUMP = int(n_evaluations / 10)
-    x_range = np.linspace(0, n_evaluations + 1, JUMP, dtype=int)
+    x_range = np.linspace(0, n_evaluations, JUMP, dtype=int, endpoint=False)
+    print(x_range)
     for lam in x_range:
+        print(lam)
         ridge_lambda = RidgeRegression(lam, include_intercept=False)
         lasso_lambda = Lasso(alpha=lam)
 
@@ -142,30 +145,30 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     fig = make_subplots(rows=1, cols=2, start_cell="bottom-left")
 
     fig.add_traces(
-        [go.Scatter(x=x_range, y=lst_of_train_err_ridge, mode="line",
+        [go.Scatter(x=x_range, y=lst_of_train_err_ridge, mode="lines+markers",
                     line=dict(color="blue"), showlegend=False),
-        go.Scatter(x=x_range, y=lst_of_val_err_ridge, mode="line",
-                    line=dict(color="blue"), showlegend=False)],
+        go.Scatter(x=x_range, y=lst_of_val_err_ridge, mode="lines+markers",
+                    line=dict(color="red"), showlegend=False)],
                    rows=[1, 1], cols=[1, 1])
     fig.add_traces(
-        [go.Scatter(x=x_range, y=lst_of_train_err_lasso, mode="line",
-                    line=dict(color="blue"), showlegend=False),
-         go.Scatter(x=x_range, y=lst_of_val_err_lasso, mode="line",
-                    line=dict(color="blue"), showlegend=False)],
+        [go.Scatter(x=x_range, y=lst_of_train_err_lasso, mode="lines+markers",
+                    line=dict(color="green"), showlegend=False),
+         go.Scatter(x=x_range, y=lst_of_val_err_lasso, mode="lines+markers",
+                    line=dict(color="orange"), showlegend=False)],
         rows=[1, 1], cols=[2, 2])
     fig.show()
 
 
     # Question 8 - Compare best Ridge model, best Lasso model and Least Squares model
     best_lambda_ridge = int(np.argmin(np.array(lst_of_val_err_ridge)))
-    ridge_lambda = RidgeRegression(best_lambda_ridge)
+    ridge_lambda = RidgeRegression(best_lambda_ridge, include_intercept=False)
     ridge_lambda.fit(train_X, train_y)
     ridge_loss = ridge_lambda.loss(test_X, test_y)
 
     best_lambda_lasso = int(np.argmin(np.array(lst_of_val_err_lasso)))
     lasso_lambda = Lasso(best_lambda_lasso)
     lasso_lambda.fit(train_X, train_y)
-    lasso_loss = lasso_lambda.loss(test_X, test_y)
+    lasso_loss = lasso_lambda.score(test_X, test_y)
 
 
 
@@ -173,6 +176,6 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
 if __name__ == '__main__':
     np.random.seed(0)
     select_polynomial_degree()
-    #select_polynomial_degree(noise=0)
-    #select_polynomial_degree(1500, 10)
-    #select_regularization_parameter()
+    select_polynomial_degree(noise=0)
+    # select_polynomial_degree(1500, 10)
+    select_regularization_parameter()

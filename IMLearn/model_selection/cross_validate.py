@@ -3,9 +3,11 @@ from copy import deepcopy
 from typing import Tuple, Callable
 import numpy as np
 import pandas as pd
+from sklearn.utils import shuffle
 
 from IMLearn import BaseEstimator
 from IMLearn.utils import split_train_test
+
 
 
 def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
@@ -40,18 +42,38 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    train_X, train_y, vaidate_X, validate_y = split_train_test(pd.DataFrame(X), pd.DataFrame(y), 1/cv)
-    train_X = np.array(train_X)
-    train_y = np.array(train_y)
-    vaidate_X = np.array(vaidate_X)
-    validate_y = np.array(validate_y)
-    if len(train_X.shape) >= 2 and train_X.shape[1] == 1:
-        train_X = np.ndarray.flatten(train_X)
-        train_y = np.ndarray.flatten(train_y)
-        vaidate_X = np.ndarray.flatten(vaidate_X)
-        validate_y = np.ndarray.flatten(validate_y)
-    train_average = cross_validate_helper(estimator, train_X, train_y, scoring, cv)
-    validation_average = cross_validate_helper(estimator, vaidate_X, validate_y, scoring, cv)
+    # train_X, train_y, vaidate_X, validate_y = split_train_test(pd.DataFrame(X), pd.DataFrame(y), 1/cv)
+    # train_X = np.array(train_X)
+    # train_y = np.array(train_y)
+    # vaidate_X = np.array(vaidate_X)
+    # validate_y = np.array(validate_y)
+    if len(X.shape) >= 2 and X.shape[1] == 1:
+        X = np.ndarray.flatten(X)
+        y = np.ndarray.flatten(y)
+    # p = np.random.permutation(len(y))
+    # X,y = X[p], y[p]
+
+    X, y = shuffle(X, y, random_state=0)
+    split_samples = np.array_split(X, cv)
+    split_labels = np.array_split(y, cv)
+
+    lst_of_losses_train = []
+    lst_of_losses_val = []
+    # print(np.shape(split_samples))
+    for i in range(cv):
+        # print(np.delete(split_samples, i))
+        train_X = np.concatenate(np.delete(split_samples, i, axis=0))
+        validate_X = split_samples[i]
+        train_y = np.concatenate(np.delete(split_labels, i, axis=0))
+        validate_y = split_labels[i]
+        h = estimator.fit(train_X, train_y)
+
+        loss = scoring(train_y, h.predict(train_X))
+        loss2 = scoring(validate_y, h.predict(validate_X))
+        lst_of_losses_train.append(loss)
+        lst_of_losses_val.append(loss2)
+    train_average = np.average(np.array(lst_of_losses_train))
+    validation_average = np.average(np.array(lst_of_losses_val))
     return train_average, validation_average
 
 def cross_validate_helper(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
@@ -60,9 +82,9 @@ def cross_validate_helper(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray
     split_labels = np.array_split(y, cv)
 
     lst_of_losses = []
-    print(np.shape(split_samples))
+    #print(np.shape(split_samples))
     for i in range(cv):
-        print(np.delete(split_samples, i))
+        #print(np.delete(split_samples, i))
         part_X = np.concatenate(np.delete(split_samples, i, axis=0))
         part_y = np.concatenate(np.delete(split_labels, i, axis=0))
         h = estimator.fit(part_X, part_y)
