@@ -63,7 +63,7 @@ class RidgeRegression(BaseEstimator):
         """
         if self.include_intercept_:
             X = np.insert(X, 0, values=1, axis=1)
-        inverse_X = np.linalg.inv(X @ X.T + self.lam_ * np.identity(X.shape[1])) #todo: check
+        inverse_X = np.linalg.inv(X.T @ X + self.lam_ * np.identity(X.shape[1])) #todo: check
         self.coefs_ = inverse_X @ X.T @ y  # the w
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
