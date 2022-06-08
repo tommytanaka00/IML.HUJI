@@ -42,18 +42,13 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_score: float
         Average validation score over folds
     """
-    # train_X, train_y, vaidate_X, validate_y = split_train_test(pd.DataFrame(X), pd.DataFrame(y), 1/cv)
-    # train_X = np.array(train_X)
-    # train_y = np.array(train_y)
-    # vaidate_X = np.array(vaidate_X)
-    # validate_y = np.array(validate_y)
-    if len(X.shape) >= 2 and X.shape[1] == 1:
-        X = np.ndarray.flatten(X)
-        y = np.ndarray.flatten(y)
-    # p = np.random.permutation(len(y))
-    # X,y = X[p], y[p]
-
-    X, y = shuffle(X, y, random_state=0)
+    # if len(X.shape) >= 2 and X.shape[1] == 1:
+    #     X = np.ndarray.flatten(X)
+    #     y = np.ndarray.flatten(y)
+    # # p = np.random.permutation(len(y))
+    # # X,y = X[p], y[p]
+    #
+    # X, y = shuffle(X, y, random_state=0)
     split_samples = np.array_split(X, cv)
     split_labels = np.array_split(y, cv)
 
@@ -76,22 +71,22 @@ def cross_validate(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
     validation_average = np.average(np.array(lst_of_losses_val))
     return train_average, validation_average
 
-def cross_validate_helper(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
-                   scoring: Callable[[np.ndarray, np.ndarray, ...], float], cv: int = 5) -> float:
-    split_samples = np.array_split(X, cv)
-    split_labels = np.array_split(y, cv)
-
-    lst_of_losses = []
-    #print(np.shape(split_samples))
-    for i in range(cv):
-        #print(np.delete(split_samples, i))
-        part_X = np.concatenate(np.delete(split_samples, i, axis=0))
-        part_y = np.concatenate(np.delete(split_labels, i, axis=0))
-        h = estimator.fit(part_X, part_y)
-        loss = scoring(part_y, h.predict(part_X))
-        lst_of_losses.append(loss)
-    average = np.average(np.array(lst_of_losses))
-    return average
+# def cross_validate_helper(estimator: BaseEstimator, X: np.ndarray, y: np.ndarray,
+#                    scoring: Callable[[np.ndarray, np.ndarray, ...], float], cv: int = 5) -> float:
+#     split_samples = np.array_split(X, cv)
+#     split_labels = np.array_split(y, cv)
+#
+#     lst_of_losses = []
+#     #print(np.shape(split_samples))
+#     for i in range(cv):
+#         #print(np.delete(split_samples, i))
+#         part_X = np.concatenate(np.delete(split_samples, i, axis=0))
+#         part_y = np.concatenate(np.delete(split_labels, i, axis=0))
+#         h = estimator.fit(part_X, part_y)
+#         loss = scoring(part_y, h.predict(part_X))
+#         lst_of_losses.append(loss)
+#     average = np.average(np.array(lst_of_losses))
+#     return average
 
 
 
