@@ -80,6 +80,7 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
               f" (with noise {noise})",
         xaxis_title="Polynomial fit degree",
         yaxis_title="Loss")
+    train_and_validation_err_fig.update_xaxes(dtick=1)
     train_and_validation_err_fig.show()
 
     # Question 3 - Using best value of k, fit a k-degree polynomial model and report test error
@@ -92,7 +93,6 @@ def select_polynomial_degree(n_samples: int = 100, noise: float = 5):
     print("k* is: ", best_k)
     print(f"Test error of polyfitted k* is {best_poly_k_loss}, while validation error was {validation_error}", )
     print()
-
 
 
 def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 500):
@@ -178,12 +178,12 @@ def select_regularization_parameter(n_samples: int = 50, n_evaluations: int = 50
     linear_loss = linear_reg.loss(test_X, test_y)
 
     print(f"--------FOR CASE WITH {n_samples} SAMPLES FOR TRAINING AND {n_evaluations} EVALUATIONS---------")
-    print(f"Best ridge regularization parameter: {best_lambda_ridge}")
-    print(f"Best lasso regularization parameter: {best_lambda_lasso}")
+    print(f"Best ridge regularization parameter: {round(best_lambda_ridge, 5)}")
+    print(f"Best lasso regularization parameter: {round(best_lambda_lasso, 5)}")
 
-    print(f"Ridge Error: {ridge_loss}")
-    print(f"Lasso Error: {lasso_loss}")
-    print(f"Least Squares Error: {linear_loss}")
+    print(f"Ridge Error: {round(ridge_loss, 5)}")
+    print(f"Lasso Error: {round(lasso_loss, 5)}")
+    print(f"Least Squares Error: {round(linear_loss, 5)}")
 
 
 
