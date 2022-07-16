@@ -18,7 +18,7 @@ class FullyConnectedLayer(BaseModule):
     activation_: BaseModule
         Activation function to be performed after integration of inputs and weights
 
-    weights: ndarray of shape (input_dim_, outout_din_)
+    weights: ndarray of shape (input_dim_, outout_dim_)
         Parameters of function with respect to which the function is optimized.
 
     include_intercept: bool
@@ -48,7 +48,14 @@ class FullyConnectedLayer(BaseModule):
         Weights are randomly initialized following N(0, 1/input_dim)
         """
         super().__init__()
-        raise NotImplementedError()
+        self.input_dim_ = input_dim
+        self.output_dim_ = output_dim
+        self.include_intercept_ = include_intercept
+        if not activation:
+            self.activation_ = None # todo: change to Linear (how?)
+        else:
+            self.activation_ = activation
+        self.weights_ = np.random.normal(0, 1/input_dim, size=(input_dim, output_dim))
 
     def compute_output(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -66,11 +73,16 @@ class FullyConnectedLayer(BaseModule):
             Value of function at point self.weights
         """
         # todo: understand what to do with the kwargs
-        output = []
-        for sample in X:
-            output.append(self.weights_ @ sample)
-        print(np.array(output))
-        return np.array(output)
+
+        if self.include_intercept_:
+            X = np.insert(X, 0, values=1, axis=1)
+
+        # output = []
+        # for sample in X:
+        #     output.append(self.weights_ @ sample)
+        # print(np.array(output))
+
+        return X @ self.weights_  #todo: I guess we don't do sigmoid?
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
