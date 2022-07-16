@@ -97,17 +97,12 @@ def softmax(X: np.ndarray) -> np.ndarray:
     """
     arr = []
     for row in X:
-        summ = np.sum(np.exp(row)) # todo check
+        summ = np.sum(np.exp(row))
         exp_of_row = np.exp(row)
         softmax_val_for_row = exp_of_row / summ
         arr.append(softmax_val_for_row)
     assert X.shape == np.array(arr).shape
     return np.array(arr)
-
-
-if __name__ == '__main__':
-    print(softmax(np.array([[0,0,0,0], [1,1,1,1], [1,1,1,2]])))
-
 
 
 

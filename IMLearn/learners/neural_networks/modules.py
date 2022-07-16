@@ -65,7 +65,12 @@ class FullyConnectedLayer(BaseModule):
         output: ndarray of shape (n_samples, output_dim)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        # todo: understand what to do with the kwargs
+        output = []
+        for sample in X:
+            output.append(self.weights_ @ sample)
+        print(np.array(output))
+        return np.array(output)
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -103,7 +108,8 @@ class ReLU(BaseModule):
         output: ndarray of shape (n_samples, input_dim)
             Data after performing the ReLU activation function
         """
-        raise NotImplementedError()
+        # todo: understand what to do with the kwargs
+        return np.maximum(X, np.zeros(shape=X.shape))
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -166,3 +172,11 @@ class CrossEntropyLoss(BaseModule):
         """
         raise NotImplementedError()
 
+
+# todo for testing, remove!
+if __name__ == '__main__':
+    relu = ReLU()
+    X = np.array([[1,4,2], [-4, 4, -2], [-10, -2, 3], [2, -4, 100]])
+    relu_matrix = relu.compute_output(X)
+    print(relu_matrix)
+    print(X)

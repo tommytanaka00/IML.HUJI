@@ -28,7 +28,9 @@ class NeuralNetwork(BaseEstimator, BaseModule):
                  loss_fn: BaseModule,
                  solver: Union[StochasticGradientDescent, GradientDescent]):
         super().__init__()
-        raise NotImplementedError()
+        self.modules_ = modules
+        self.loss_fn_ = loss_fn
+        self.solver_ = solver
 
     # region BaseEstimator implementations
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
