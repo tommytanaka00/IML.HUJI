@@ -32,8 +32,7 @@ class FixedLR(BaseLR):
         -----
         No arguments are expected
         """
-        raise NotImplementedError()
-
+        return self.base_lr
 
 class ExponentialLR(FixedLR):
     """
@@ -46,7 +45,7 @@ class ExponentialLR(FixedLR):
         Parameters:
         ----------
         base_lr: float
-            Learning to be returned at t=0 (i.e eta)
+            Learning to be returned at t=1 (i.e eta)
 
         decay_rate: float
             Decay rate of learning-rate (i.e. gamma)
@@ -68,4 +67,4 @@ class ExponentialLR(FixedLR):
         eta_t: float
             Exponential decay according to eta_t = eta*gamma^t
         """
-        raise NotImplementedError()
+        return self.base_lr*(self.decay_rate**t)

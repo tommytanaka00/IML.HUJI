@@ -82,7 +82,7 @@ class FullyConnectedLayer(BaseModule):
         #     output.append(self.weights_ @ sample)
         # print(np.array(output))
 
-        return X @ self.weights_  #todo: I guess we don't do sigmoid?
+        return self.activation_.compute_output(X @ self.weights_)  #todo: check
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -98,7 +98,7 @@ class FullyConnectedLayer(BaseModule):
         output: ndarray of shape (input_dim, n_samples)
             Derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
+        self.activation_.compute_jacobian()
 
 
 class ReLU(BaseModule):
@@ -163,7 +163,12 @@ class CrossEntropyLoss(BaseModule):
         output: ndarray of shape (n_samples,)
             cross-entropy loss value of given X and y
         """
-        raise NotImplementedError()
+        cross_entropy_loss_arr = []
+        for x, e_k in zip(softmax(X),np.eye(softmax(X).shape[1])):
+            print(x, e_k)
+            cross_entropy_loss_arr.append(cross_entropy(e_k, x))
+        return np.array(cross_entropy_loss_arr)
+
 
     def compute_jacobian(self, X: np.ndarray, y: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -182,7 +187,7 @@ class CrossEntropyLoss(BaseModule):
         output: ndarray of shape (n_samples, input_dim)
             derivative of cross-entropy loss with respect to given input
         """
-        raise NotImplementedError()
+        raise NotImplementedError
 
 
 # todo for testing, remove!
@@ -192,3 +197,5 @@ if __name__ == '__main__':
     relu_matrix = relu.compute_output(X)
     print(relu_matrix)
     print(X)
+
+    CrossEntropyLoss().compute_output(X, np.array([0,0,1]))

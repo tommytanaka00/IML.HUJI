@@ -33,8 +33,7 @@ class L2(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
-
+        return np.linalg.norm(self.weights)**2
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
         Compute L2 derivative with respect to self.weights at point self.weights
@@ -49,7 +48,7 @@ class L2(BaseModule):
         output: ndarray of shape (n_in,)
             L2 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
+        return self.weights*2
 
 
 class L1(BaseModule):
@@ -78,7 +77,7 @@ class L1(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        return np.linalg.norm(self.weights,ord=1)
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -94,14 +93,14 @@ class L1(BaseModule):
         output: ndarray of shape (n_in,)
             L1 derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
+        return np.sign(self.weights)
 
 
 class LogisticModule(BaseModule):
     """
     Class representing the logistic regression objective function
 
-    Represents the function: f(w) = - (1/m) sum_i^m[y*<x_i,w> - log(1+exp(<x_i,w>))]
+    Represents the function: f(w) = - (1/m) sum_i^m[y*<x_i,w> - log(sigmoid(<x_i,w>))]
     """
     def __init__(self, weights: np.ndarray = None):
         """
@@ -131,7 +130,9 @@ class LogisticModule(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        X_b = np.dot(X,self.weights)
+        return -(np.sum(y * X_b - np.log(1 + np.exp(X_b)))/y.size)
+
 
     def compute_jacobian(self, X: np.ndarray, y: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -150,9 +151,8 @@ class LogisticModule(BaseModule):
         output: ndarray of shape (n_features,)
             Derivative of function with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
-
-
+        E_xb = np.exp(self.weights@X.T)
+        return -((y @ X - X.T @ (E_xb / (1 + E_xb))) / y.size)
 class RegularizedModule(BaseModule):
     """
     Class representing a general regularized objective function of the format:
@@ -191,7 +191,7 @@ class RegularizedModule(BaseModule):
         self.include_intercept_ = include_intercept
 
         if weights is not None:
-            self.weights = weights
+            self.weights= weights
 
     def compute_output(self, **kwargs) -> np.ndarray:
         """
@@ -207,7 +207,9 @@ class RegularizedModule(BaseModule):
         output: ndarray of shape (1,)
             Value of function at point self.weights
         """
-        raise NotImplementedError()
+        f = self.fidelity_module_.compute_output(**kwargs)
+        r = self.regularization_module_.compute_output(**kwargs)
+        return f+self.lam_*r
 
     def compute_jacobian(self, **kwargs) -> np.ndarray:
         """
@@ -223,8 +225,9 @@ class RegularizedModule(BaseModule):
         output: ndarray of shape (n_in,)
             Derivative with respect to self.weights at point self.weights
         """
-        raise NotImplementedError()
-
+        f = self.fidelity_module_.compute_jacobian(**kwargs)
+        r = self.regularization_module_.compute_jacobian(**kwargs)
+        return f + self.lam_*r
     @property
     def weights(self):
         """
@@ -234,7 +237,7 @@ class RegularizedModule(BaseModule):
         -------
         weights: ndarray of shape (n_in, n_out)
         """
-        raise NotImplementedError()
+        return self.fidelity_module_.weights
 
     @weights.setter
     def weights(self, weights: np.ndarray) -> None:
@@ -249,4 +252,8 @@ class RegularizedModule(BaseModule):
         weights: ndarray of shape (n_in, n_out)
             Weights to set for module
         """
-        raise NotImplementedError()
+        self.weights_ = weights
+        self.fidelity_module_.weights_ = weights.copy()
+        self.regularization_module_.weights_ = weights.copy()
+        if self.include_intercept_:
+            self.regularization_module_.weights[0] = 0
