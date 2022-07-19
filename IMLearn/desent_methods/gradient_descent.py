@@ -12,9 +12,9 @@ def default_callback(**kwargs) -> NoReturn:
     pass
 
 
-class GradientDescent:
+class GradienttDescent:
     """
-    Gradient Descent algorithm
+    Gradientt Descent algorithm
 
     Attributes:
     -----------
@@ -37,16 +37,16 @@ class GradientDescent:
     callback_: Callable[[...], None], default=default_callback
         A callable function to be called after each update of the model while fitting to given data.
         Callable function receives as input any argument relevant for the current GD iteration. Arguments
-        are specified in the `GradientDescent.fit` function
+        are specified in the `GradienttDescent.fit` function
     """
     def __init__(self,
                  learning_rate: BaseLR = FixedLR(1e-3),
                  tol: float = 1e-5,
                  max_iter: int = 1000,
                  out_type: str = "last",
-                 callback: Callable[[GradientDescent, ...], None] = default_callback):
+                 callback: Callable[[GradienttDescent, ...], None] = default_callback):
         """
-        Instantiate a new instance of the GradientDescent class
+        Instantiate a new instance of the GradienttDescent class
 
         Parameters
         ----------
@@ -66,7 +66,7 @@ class GradientDescent:
         callback: Callable[[...], None], default=default_callback
             A callable function to be called after each update of the model while fitting to given data.
             Callable function receives as input any argument relevant for the current GD iteration. Arguments
-            are specified in the `GradientDescent.fit` function
+            are specified in the `GradienttDescent.fit` function
         """
         self.learning_rate_ = learning_rate
         if out_type not in OUTPUT_VECTOR_TYPE:
@@ -103,8 +103,8 @@ class GradientDescent:
 
         - At the end of each iteration the self.callback_ function is called passing self and the
         following named arguments:
-            - solver: GradientDescent
-                self, the current instance of GradientDescent
+            - solver: GradienttDescent
+                self, the current instance of GradienttDescent
             - weights: ndarray of shape specified by module's weights
                 Current weights of objective
             - val: ndarray of shape specified by module's compute_output function
@@ -123,8 +123,8 @@ class GradientDescent:
 
         for i in range(self.max_iter_):
             learn_rate = self.learning_rate_.lr_step(t=i)
-            gradien = f.compute_jacobian(X=X, y=y)
-            weights.append(weights[-1] - learn_rate * gradien)
+            gradient = f.compute_jacobian(X=X, y=y)
+            weights.append(weights[-1] - learn_rate * gradient)
             values.append(f.compute_output(X=X, y=y))
             delta = np.linalg.norm(weights[i - 1] - weights[i])
             f.weights = weights[-1]

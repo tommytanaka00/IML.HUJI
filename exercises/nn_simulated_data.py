@@ -110,7 +110,13 @@ if __name__ == '__main__':
     # ---------------------------------------------------------------------------------------------#
     # Question 1: Fitting simple network with two hidden layers                                    #
     # ---------------------------------------------------------------------------------------------#
-    raise NotImplementedError()
+    layer1 = FullyConnectedLayer(input_dim=16, output_dim=16, activation=ReLU(), include_intercept=True)
+    layer2 = FullyConnectedLayer(input_dim=16, output_dim=16, activation=ReLU(), include_intercept=True)
+    network = NeuralNetwork([layer1, layer2], CrossEntropyLoss(), GradientDescent(FixedLR(0.1), max_iter=5000))
+
+    network.fit(train_X, train_y)
+    plot_decision_boundary(network, lims, train_X, train_y, "Decision Boundary for Neural Network")
+    print(network.loss(test_X, test_y))
 
     # ---------------------------------------------------------------------------------------------#
     # Question 2: Fitting a network with no hidden layers                                          #

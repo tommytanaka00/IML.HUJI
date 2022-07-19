@@ -32,6 +32,9 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         self.loss_fn_ = loss_fn
         self.solver_ = solver
 
+        self.pre_activations = None
+        self.post_activations = None
+
     # region BaseEstimator implementations
     def _fit(self, X: np.ndarray, y: np.ndarray) -> NoReturn:
         """
@@ -45,7 +48,19 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         y : ndarray of shape (n_samples, )
             Responses of input data to fit to
         """
-        raise NotImplementedError()
+
+        #todo: remove?
+        """
+        What I need to do:
+        We have many Layers, each with own weights. First initialized as random
+        1: put weights of all layers in one big vector
+        2: Use Descent Method (function) to get to minimum loss of pred_y vs y
+        
+        Step ?: Calculate the cost (loss) of pred_y (from X) vs y with random weights
+
+        """
+
+
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
         """
@@ -80,7 +95,8 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         loss : float
             Performance under specified loss function
         """
-        raise NotImplementedError()
+        raise NotImplementedError
+        #self.loss_fn_.compute_output(X)
     # endregion
 
     # region BaseModule implementations
@@ -105,7 +121,7 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         -----
         Function stores all intermediate values in the `self.pre_activations_` and `self.post_activations_` arrays
         """
-        raise NotImplementedError()
+        # Use back propagation
 
     def compute_prediction(self, X: np.ndarray):
         """

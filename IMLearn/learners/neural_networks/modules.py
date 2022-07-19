@@ -51,10 +51,11 @@ class FullyConnectedLayer(BaseModule):
         self.input_dim_ = input_dim
         self.output_dim_ = output_dim
         self.include_intercept_ = include_intercept
-        if not activation:
-            self.activation_ = None # todo: change to Linear (how?)
-        else:
-            self.activation_ = activation
+        # if not activation:
+        #     self.activation_ = None # todo: change to Linear (how?)
+        # else:
+        #     self.activation_ = activation
+        self.activation_ = activation
         self.weights_ = np.random.normal(0, 1/input_dim, size=(input_dim, output_dim))
 
     def compute_output(self, X: np.ndarray, **kwargs) -> np.ndarray:
@@ -73,16 +74,16 @@ class FullyConnectedLayer(BaseModule):
             Value of function at point self.weights
         """
         # todo: understand what to do with the kwargs
-
+        assert X.shape[1] == self.input_dim_
         if self.include_intercept_:
             X = np.insert(X, 0, values=1, axis=1)
 
-        # output = []
-        # for sample in X:
-        #     output.append(self.weights_ @ sample)
-        # print(np.array(output))
+        output = X @ self.weights_
+        if self.activation_ is not None:
+            output = self.activation_.compute_output(X=output)
 
-        return self.activation_.compute_output(X @ self.weights_)  #todo: check
+        assert output.shape[1] == self.output_dim_
+        return output #todo: check
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
         """
@@ -163,10 +164,23 @@ class CrossEntropyLoss(BaseModule):
         output: ndarray of shape (n_samples,)
             cross-entropy loss value of given X and y
         """
+        #todo: where's the y??
         cross_entropy_loss_arr = []
-        for x, e_k in zip(softmax(X),np.eye(softmax(X).shape[1])):
-            print(x, e_k)
-            cross_entropy_loss_arr.append(cross_entropy(e_k, x))
+        for x in softmax(X):
+            print(x)
+        print()
+        for x in softmax(X):
+            rename_this_list = []
+
+            for e_k in np.eye(softmax(X).shape[1]):
+                rename_this_list.append(cross_entropy(e_k, x))
+
+
+            sum_of_losses = sum(rename_this_list)
+            #todo: Or maybe... this should be the (RSS?) loss between rename_this_list and y?
+
+            cross_entropy_loss_arr.append(sum_of_losses)
+        assert len(cross_entropy_loss_arr) == X.shape[0]
         return np.array(cross_entropy_loss_arr)
 
 
@@ -187,15 +201,32 @@ class CrossEntropyLoss(BaseModule):
         output: ndarray of shape (n_samples, input_dim)
             derivative of cross-entropy loss with respect to given input
         """
-        raise NotImplementedError
+        # for x in X:
+
+
 
 
 # todo for testing, remove!
 if __name__ == '__main__':
-    relu = ReLU()
-    X = np.array([[1,4,2], [-4, 4, -2], [-10, -2, 3], [2, -4, 100]])
-    relu_matrix = relu.compute_output(X)
-    print(relu_matrix)
-    print(X)
+    # relu = ReLU()
+    X = np.array([[1,4,2], [1,2,2]])
+    # relu_matrix = relu.compute_output(X)
+    # print(relu_matrix)
+    # print(X)
 
-    CrossEntropyLoss().compute_output(X, np.array([0,0,1]))
+    # print(softmax(X))
+    # e_1 = np.zeros(shape=X.shape[1])
+    # e_1[0] = 1
+    # e_2 = np.zeros(shape=X.shape[1])
+    # e_2[1] = 1
+    # e_3 = np.zeros(shape=X.shape[1])
+    # e_3[2] = 1
+    # e = [e_1, e_2, e_3]
+    # print(e_1, e_2, e_3)
+    # print(cross_entropy(e_1, softmax(X)[0]))
+    # print(cross_entropy(e_2, softmax(X)[0]))
+    # print(cross_entropy(e_3, softmax(X)[0]))
+    # y = [cross_entropy(e_i, softmax(X)[0]) for e_i in e]
+
+    print(end="\n\n")
+    print(CrossEntropyLoss().compute_output(X, np.array([0,0,1])))
