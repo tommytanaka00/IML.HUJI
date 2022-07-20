@@ -12,9 +12,9 @@ def default_callback(**kwargs) -> NoReturn:
     pass
 
 
-class GradienttDescent:
+class GradientDescent:
     """
-    Gradientt Descent algorithm
+    Gradient Descent algorithm
 
     Attributes:
     -----------

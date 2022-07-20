@@ -92,14 +92,24 @@ def softmax(X: np.ndarray) -> np.ndarray:
     output: ndarray of shape (n_samples, n_features)
         Softmax(x) for every sample x in given data X
     """
-    arr = []
-    for sample in X:
-        summ = np.sum(np.exp(sample))
-        exp_of_row = np.exp(sample)
-        softmax_val_for_row = exp_of_row / summ
-        arr.append(softmax_val_for_row)
-    #assert X.shape == np.array(arr).shape #todo remove
-    return np.array(arr)
+
+    # X = X - (X.max() * np.ones(shape=X.shape))
+
+    exp_of_X = np.exp(X - np.max(X, axis=1, keepdims=True))
+    sum_vector = np.sum(exp_of_X, axis=1, keepdims=True)
+    norm_values = exp_of_X / sum_vector
+    return norm_values
+
+    # Idea:
+    # arr = []
+    # for sample in X:
+    #     exp_of_row = np.exp(sample)
+    #     summ = np.sum(exp_of_row)
+    #     softmax_val_for_row = exp_of_row / summ
+    #     arr.append(softmax_val_for_row)
+    # return np.array(arr)
 
 
-
+if __name__ == '__main__':
+    out = np.array([[1,2,3], [4,4,4], [1,10,1]])
+    print(softmax(out))

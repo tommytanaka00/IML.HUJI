@@ -80,7 +80,7 @@ class FullyConnectedLayer(BaseModule):
 
         output = X @ self.weights_
         if self.activation_ is not None:
-            output = self.activation_.compute_output(X=output)
+            output = self.activation_.compute_output(X=output, y=y)
 
         assert output.shape[1] == self.output_dim_
         return output #todo: check
@@ -164,22 +164,19 @@ class CrossEntropyLoss(BaseModule):
         output: ndarray of shape (n_samples,)
             cross-entropy loss value of given X and y
         """
-        #todo: where's the y??
+        # y is the class targets
+
+
         cross_entropy_loss_arr = []
-        for x in softmax(X):
-            print(x)
-        print()
-        for x in softmax(X):
+        softmax_X = softmax(X)
+        for i,x in enumerate(np.array([[0.7, 0.1, 0.2]])):
             rename_this_list = []
+            e_k = np.zeros(shape=x.shape)
+            e_k[y[i]] = 1
+            cross_entropy_loss_arr.append(cross_entropy(e_k, x))
+            # sum_of_losses = sum(rename_this_list)
 
-            for e_k in np.eye(softmax(X).shape[1]):
-                rename_this_list.append(cross_entropy(e_k, x))
-
-
-            sum_of_losses = sum(rename_this_list)
-            #todo: Or maybe... this should be the (RSS?) loss between rename_this_list and y?
-
-            cross_entropy_loss_arr.append(sum_of_losses)
+            # cross_entropy_loss_arr.append(sum_of_losses)
         assert len(cross_entropy_loss_arr) == X.shape[0]
         return np.array(cross_entropy_loss_arr)
 
@@ -208,8 +205,18 @@ class CrossEntropyLoss(BaseModule):
 
 # todo for testing, remove!
 if __name__ == '__main__':
-    relu = ReLU()
-    X = np.array([[1,4,2], [1,2,2]])
+    softmax_output = np.array([[0.7, 0.1, 0.2]])
+    print(softmax(softmax_output))
+
+    X = np.array([[0.7, 0.1, 0.2],
+         [0.1, 0.5, 0.4],
+         [0.02, 0.9, 0.08]])
+    y = np.array([0])
+    print(CrossEntropyLoss().compute_output(X=softmax_output, y=y))
+    # print(CrossEntropyLoss().compute_output(X=X, y=y))
+
+    print("\n\n\n")
+    # X = np.array([[1,4,2], [1,2,2]])
     # relu_matrix = relu.compute_output(X)
     # print(relu_matrix)
     # print(X)
@@ -231,16 +238,19 @@ if __name__ == '__main__':
     # print(end="\n\n")
     # print(CrossEntropyLoss().compute_output(X, np.array([0,0,1])))
 
-    X=np.array([[1, 2, 3, 2.5], [1,3,4,-2]])
+    relu = ReLU()
 
-    layer = FullyConnectedLayer(4, 3, None, False)
+    X = np.array([[1, 2, 3, 2.5]])
+    y = [1]  # y is class target
+
+    layer = FullyConnectedLayer(4, 3, relu, False)
     #print("weights= ", layer.weights_, end="\n\n")
 
     output_of_layer1 = layer.compute_output(X=X)
     print(output_of_layer1)
 
-    layer2 = FullyConnectedLayer(3, 5, relu, False)
+    layer2 = FullyConnectedLayer(3, 2, CrossEntropyLoss(), False)
     print("\n")
     #print("\nweights= ", layer2.weights_, end="\n\n")
 
-    print(layer2.compute_output(X=output_of_layer1))
+    print(layer2.compute_output(X=output_of_layer1, y=y))
