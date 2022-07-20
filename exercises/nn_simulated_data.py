@@ -101,25 +101,26 @@ if __name__ == '__main__':
         samples_per_class=500, n_features=n_features, n_classes=n_classes, train_proportion=0.8)
     lims = np.array([np.r_[train_X, test_X].min(axis=0), np.r_[train_X, test_X].max(axis=0)]).T + np.array([-.1, .1])
 
-    go.Figure(data=[go.Scatter(x=train_X[:, 0], y=train_X[:, 1], mode='markers',
-                               marker=dict(color=train_y, colorscale=custom, line=dict(color="black", width=1)))],
-              layout=go.Layout(title=r"$\text{Train Data}$", xaxis=dict(title=r"$x_1$"), yaxis=dict(title=r"$x_2$"),
-                               width=400, height=400))\
-        .write_image(f"../figures/nonlinear_data.png")
+    # go.Figure(data=[go.Scatter(x=train_X[:, 0], y=train_X[:, 1], mode='markers',
+    #                            marker=dict(color=train_y, colorscale=custom, line=dict(color="black", width=1)))],
+    #           layout=go.Layout(title=r"$\text{Train Data}$", xaxis=dict(title=r"$x_1$"), yaxis=dict(title=r"$x_2$"),
+    #                            width=400, height=400))\
+    #     .write_image(f"../figures/nonlinear_data.png")
 
     # ---------------------------------------------------------------------------------------------#
     # Question 1: Fitting simple network with two hidden layers                                    #
     # ---------------------------------------------------------------------------------------------#
-
+    print("X is: ", test_X)
     print("y is: ", test_y)
-    hidden_layer1 = FullyConnectedLayer(input_dim=n_features, output_dim=16, activation=ReLU(), include_intercept=True)
-    hidden_layer2 = FullyConnectedLayer(input_dim=16, output_dim=16, activation=ReLU(), include_intercept=True)
-    final_output_layer = FullyConnectedLayer(input_dim=16, output_dim=n_classes, activation=CrossEntropyLoss(), include_intercept=True)
+    hidden_layer1 = FullyConnectedLayer(input_dim=n_features, output_dim=16, activation=ReLU(), include_intercept=False) #todo fix the intercept
+    hidden_layer2 = FullyConnectedLayer(input_dim=16, output_dim=16, activation=ReLU(), include_intercept=False)
+    final_output_layer = FullyConnectedLayer(input_dim=16, output_dim=n_classes, include_intercept=False)
     network = NeuralNetwork([hidden_layer1, hidden_layer2, final_output_layer], CrossEntropyLoss(), GradientDescent(FixedLR(0.1), max_iter=5000))
+    print(network.compute_prediction(X=train_X))
 
-    network.fit(train_X, train_y)
-    plot_decision_boundary(network, lims, train_X, train_y, "Decision Boundary for Neural Network")
-    print(network.loss(test_X, test_y))
+    # network.fit(train_X, train_y)
+    # plot_decision_boundary(network, lims, train_X, train_y, "Decision Boundary for Neural Network")
+    # print(network.loss(test_X, test_y))
 
     # ---------------------------------------------------------------------------------------------#
     # Question 2: Fitting a network with no hidden layers                                          #

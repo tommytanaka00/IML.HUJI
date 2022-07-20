@@ -80,7 +80,7 @@ class FullyConnectedLayer(BaseModule):
 
         output = X @ self.weights_
         if self.activation_ is not None:
-            output = self.activation_.compute_output(X=output, y=y)
+            output = self.activation_.compute_output(X=output)
 
         assert output.shape[1] == self.output_dim_
         return output #todo: check
@@ -121,7 +121,6 @@ class ReLU(BaseModule):
         output: ndarray of shape (n_samples, input_dim)
             Data after performing the ReLU activation function
         """
-        # todo: understand what to do with the kwargs
         return np.maximum(X, np.zeros(shape=X.shape))
 
     def compute_jacobian(self, X: np.ndarray, **kwargs) -> np.ndarray:
@@ -138,7 +137,7 @@ class ReLU(BaseModule):
         output: ndarray of shape (n_samples,)
             Element-wise derivative of ReLU with respect to given data
         """
-        raise NotImplementedError()
+        return
 
 
 class CrossEntropyLoss(BaseModule):
@@ -165,18 +164,15 @@ class CrossEntropyLoss(BaseModule):
             cross-entropy loss value of given X and y
         """
         # y is the class targets
-
-
         cross_entropy_loss_arr = []
         softmax_X = softmax(X)
-        for i,x in enumerate(np.array([[0.7, 0.1, 0.2]])):
-            rename_this_list = []
+        for i,x in enumerate(softmax_X):
             e_k = np.zeros(shape=x.shape)
-            e_k[y[i]] = 1
+            if len(y.shape) == 1:
+                e_k[y[i]] = 1
+            elif len(y.shape) == 2: # if hot coded
+                e_k = y[i]
             cross_entropy_loss_arr.append(cross_entropy(e_k, x))
-            # sum_of_losses = sum(rename_this_list)
-
-            # cross_entropy_loss_arr.append(sum_of_losses)
         assert len(cross_entropy_loss_arr) == X.shape[0]
         return np.array(cross_entropy_loss_arr)
 
@@ -205,17 +201,20 @@ class CrossEntropyLoss(BaseModule):
 
 # todo for testing, remove!
 if __name__ == '__main__':
-    softmax_output = np.array([[0.7, 0.1, 0.2]])
-    print(softmax(softmax_output))
-
-    X = np.array([[0.7, 0.1, 0.2],
-         [0.1, 0.5, 0.4],
-         [0.02, 0.9, 0.08]])
-    y = np.array([0])
-    print(CrossEntropyLoss().compute_output(X=softmax_output, y=y))
+    # softmax_output = np.array([[0.7, 0.1, 0.2]])
+    #
+    # X = np.array([[0.7, 0.1, 0.2],
+    #      [0.1, 0.5, 0.4],
+    #      [0.02, 0.9, 0.08]])
+    # y = np.array([0, 1, 1])
+    # y_hotcoded = np.array([[1,0,0],
+    #                        [0,1,0],
+    #                        [0,1,0]])
     # print(CrossEntropyLoss().compute_output(X=X, y=y))
-
-    print("\n\n\n")
+    # print(CrossEntropyLoss().compute_output(X=X, y=y_hotcoded))
+    # # print(CrossEntropyLoss().compute_output(X=X, y=y))
+    #
+    # print("\n\n")
     # X = np.array([[1,4,2], [1,2,2]])
     # relu_matrix = relu.compute_output(X)
     # print(relu_matrix)
@@ -237,11 +236,16 @@ if __name__ == '__main__':
 
     # print(end="\n\n")
     # print(CrossEntropyLoss().compute_output(X, np.array([0,0,1])))
+    #
+
+
+
+
 
     relu = ReLU()
 
     X = np.array([[1, 2, 3, 2.5]])
-    y = [1]  # y is class target
+    y = np.array([[0,1,0,0]])  # y is class target
 
     layer = FullyConnectedLayer(4, 3, relu, False)
     #print("weights= ", layer.weights_, end="\n\n")

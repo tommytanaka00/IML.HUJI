@@ -61,6 +61,7 @@ class NeuralNetwork(BaseEstimator, BaseModule):
 
         """
 
+        self.solver_.fit(self, X, y)
 
 
     def _predict(self, X: np.ndarray) -> np.ndarray:
@@ -124,12 +125,12 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         -----
         Function stores all intermediate values in the `self.pre_activations_` and `self.post_activations_` arrays
         """
-        # Use back propagation
+        return sum(self.loss_fn_.compute_output(y_pred=self.compute_prediction(X), y_actual=y))
 
     def compute_prediction(self, X: np.ndarray):
         """
-        Compute network output (forward pass) with respect to modules' weights given input samples, except pass
-        through specified loss function
+        Compute network output (forward pass) with respect to modules' weights given input samples, except (do
+         you mean "but without"?) pass through specified loss function
 
         Parameters
         ----------
@@ -167,6 +168,7 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         Function depends on values calculated in forward pass and stored in
         `self.pre_activations_` and `self.post_activations_`
         """
+        # Somehow use the chain rule to calculate d(Loss(/dw
         raise NotImplementedError()
 
     @property
