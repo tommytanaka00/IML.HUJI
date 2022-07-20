@@ -58,7 +58,12 @@ class StochasticGradientDescent:
             Callable function receives as input any argument relevant for the current GD iteration. Arguments
             are specified in the `GradientDescent.fit` function
         """
-        raise NotImplementedError()
+        self.learning_rate_ = learning_rate
+        self.batch_size = batch_size
+        self.tol_ = tol
+        self.max_iter_ = max_iter
+        self.callback_ = callback
+
 
     def fit(self, f: BaseModule, X: np.ndarray, y: np.ndarray):
         """
@@ -107,7 +112,23 @@ class StochasticGradientDescent:
             - batch_indices: np.ndarray of shape (n_batch,)
                 Sample indices used in current SGD iteration
         """
-        raise NotImplementedError()
+        weights, values = [f.weights], [f.compute_output(X=X, y=y)]
+
+        for i in range(self.max_iter_):
+            learn_rate = self.learning_rate_.lr_step(t=i)
+            gradient = f.compute_jacobian(X=X, y=y)
+            weights.append(weights[-1] - learn_rate * gradient)
+            values.append(f.compute_output(X=X, y=y))
+            delta = np.linalg.norm(weights[i - 1] - weights[i])
+            f.weights = weights[-1]
+            self.callback_(weight=f.weights, val=values[-1])
+            if delta < self.tol_:
+                break
+        if self.out_type_ == "average":
+            return np.mean(weights, axis=1)
+        elif self.out_type_ == "best":
+            return weights[np.argmin(values)]
+        return weights[-1]
 
     def _partial_fit(self, f: BaseModule, X: np.ndarray, y: np.ndarray, t: int) -> Tuple[np.ndarray, np.ndarray, float]:
         """

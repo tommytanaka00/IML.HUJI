@@ -66,7 +66,7 @@ class GradienttDescent:
         callback: Callable[[...], None], default=default_callback
             A callable function to be called after each update of the model while fitting to given data.
             Callable function receives as input any argument relevant for the current GD iteration. Arguments
-            are specified in the `GradienttDescent.fit` function
+            are specified in the `GradientDescent.fit` function
         """
         self.learning_rate_ = learning_rate
         if out_type not in OUTPUT_VECTOR_TYPE:

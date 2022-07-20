@@ -54,6 +54,7 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         What I need to do:
         We have many Layers, each with own weights. First initialized as random
         1: put weights of all layers in one big vector
+        2: Use back propagation to calculate Gradient descent
         2: Use Descent Method (function) to get to minimum loss of pred_y vs y
         
         Step ?: Calculate the cost (loss) of pred_y (from X) vs y with random weights
@@ -76,7 +77,9 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         responses : ndarray of shape (n_samples, )
             Predicted labels of given samples
         """
-        raise NotImplementedError()
+
+
+
 
     def _loss(self, X: np.ndarray, y: np.ndarray) -> float:
         """
@@ -95,8 +98,8 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         loss : float
             Performance under specified loss function
         """
-        raise NotImplementedError
-        #self.loss_fn_.compute_output(X)
+        # todo: check
+        return sum(self.loss_fn_.compute_output(y_pred=self.predict(X), y_actual=y))
     # endregion
 
     # region BaseModule implementations
@@ -138,7 +141,10 @@ class NeuralNetwork(BaseEstimator, BaseModule):
         output : ndarray of shape (n_samples, n_classes)
             Network's output values prior to the call of the loss function
         """
-        raise NotImplementedError()
+        responses = X
+        for module in self.modules_:
+            responses = module.compute_output(responses)
+        return responses
 
     def compute_jacobian(self, X: np.ndarray, y: np.ndarray, **kwargs) -> np.ndarray:
         """

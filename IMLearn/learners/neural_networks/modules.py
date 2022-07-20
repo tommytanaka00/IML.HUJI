@@ -31,7 +31,7 @@ class FullyConnectedLayer(BaseModule):
         Parameters:
         -----------
         input_dim: int
-            Size of input to layer (number of neurons in preceding layer
+            Size of input to layer (number of neurons in preceding layer)
 
         output_dim: int
             Size of layer output (number of neurons in layer_)
@@ -99,7 +99,7 @@ class FullyConnectedLayer(BaseModule):
         output: ndarray of shape (input_dim, n_samples)
             Derivative with respect to self.weights at point self.weights
         """
-        self.activation_.compute_jacobian()
+        return X.T
 
 
 class ReLU(BaseModule):
@@ -208,7 +208,7 @@ class CrossEntropyLoss(BaseModule):
 
 # todo for testing, remove!
 if __name__ == '__main__':
-    # relu = ReLU()
+    relu = ReLU()
     X = np.array([[1,4,2], [1,2,2]])
     # relu_matrix = relu.compute_output(X)
     # print(relu_matrix)
@@ -228,5 +228,19 @@ if __name__ == '__main__':
     # print(cross_entropy(e_3, softmax(X)[0]))
     # y = [cross_entropy(e_i, softmax(X)[0]) for e_i in e]
 
-    print(end="\n\n")
-    print(CrossEntropyLoss().compute_output(X, np.array([0,0,1])))
+    # print(end="\n\n")
+    # print(CrossEntropyLoss().compute_output(X, np.array([0,0,1])))
+
+    X=np.array([[1, 2, 3, 2.5], [1,3,4,-2]])
+
+    layer = FullyConnectedLayer(4, 3, None, False)
+    #print("weights= ", layer.weights_, end="\n\n")
+
+    output_of_layer1 = layer.compute_output(X=X)
+    print(output_of_layer1)
+
+    layer2 = FullyConnectedLayer(3, 5, relu, False)
+    print("\n")
+    #print("\nweights= ", layer2.weights_, end="\n\n")
+
+    print(layer2.compute_output(X=output_of_layer1))
